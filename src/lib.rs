@@ -40,6 +40,8 @@ pub use uda::{UdaWrapper, UniqueDigitalAsset, UDA_SCHEMA_ID};
 pub const GS_ART: GlobalStateType = GlobalStateType::with(3000);
 pub const GS_ATTACH: GlobalStateType = GlobalStateType::with(2104);
 pub const GS_REJECT_LIST_URL: GlobalStateType = GlobalStateType::with(2012);
+pub const GS_LINKED_FROM_CONTRACT: GlobalStateType = GlobalStateType::with(2013);
+pub const GS_LINKED_TO_CONTRACT: GlobalStateType = GlobalStateType::with(2014);
 pub const GS_DETAILS: GlobalStateType = GlobalStateType::with(3004);
 pub const GS_ENGRAVINGS: GlobalStateType = GlobalStateType::with(2103);
 pub const GS_ISSUED_SUPPLY: GlobalStateType = GlobalStateType::with(2010);
@@ -54,11 +56,13 @@ pub const GS_PUBKEY: GlobalStateType = GlobalStateType::with(3006);
 pub const OS_ASSET: AssignmentType = AssignmentType::with(4000);
 pub const OS_INFLATION: AssignmentType = AssignmentType::with(4010);
 pub const OS_REPLACE: AssignmentType = AssignmentType::with(4012);
+pub const OS_LINK: AssignmentType = AssignmentType::with(4013);
 
 pub const TS_INFLATION: TransitionType = TransitionType::with(8000);
 pub const TS_BURN: TransitionType = TransitionType::with(8010);
 pub const TS_REPLACE: TransitionType = TransitionType::with(8011);
 pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
+pub const TS_LINK: TransitionType = TransitionType::with(8012);
 
 pub const MS_ALLOWED_INFLATION: MetaType = MetaType::with(1000);
 

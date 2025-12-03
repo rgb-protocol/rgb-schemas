@@ -26,30 +26,32 @@ use aluvm::isa::Instr;
 use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, RightsAllocation,
-    SchemaWrapper,
+    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, LinkError,
+    LinkableIssuerWrapper, LinkableSchemaWrapper, RightsAllocation, SchemaWrapper,
 };
 use rgbstd::persistence::{ContractStateRead, MemContract};
+use rgbstd::rgbcore::stl::rgb_contract_id_stl;
 use rgbstd::schema::{
     AssignmentDetails, FungibleType, GenesisSchema, GlobalStateSchema, Occurrences,
     OwnedStateSchema, Schema, TransitionSchema,
 };
-use rgbstd::stl::{rgb_contract_stl, AssetSpec, ContractTerms, RejectListUrl, StandardTypes};
+use rgbstd::stl::{AssetSpec, ContractTerms, RejectListUrl, StandardTypes};
 use rgbstd::validation::Scripts;
 use rgbstd::vm::RgbIsa;
-use rgbstd::{rgbasm, Amount, GlobalDetails, MetaDetails, SchemaId, TransitionDetails};
-use strict_types::TypeSystem;
+use rgbstd::{rgbasm, Amount, ContractId, GlobalDetails, MetaDetails, SchemaId, TransitionDetails};
+use strict_types::{StrictVal, TypeSystem};
 
 use crate::{
     ERRNO_INFLATION_EXCEEDS_ALLOWANCE, ERRNO_INFLATION_MISMATCH, ERRNO_ISSUED_MISMATCH,
     ERRNO_NON_EQUAL_IN_OUT, ERRNO_REPLACE_HIDDEN_BURN, ERRNO_REPLACE_NO_INPUT, GS_ISSUED_SUPPLY,
-    GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL, GS_TERMS, MS_ALLOWED_INFLATION, OS_ASSET,
-    OS_INFLATION, OS_REPLACE, TS_BURN, TS_INFLATION, TS_REPLACE, TS_TRANSFER,
+    GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL,
+    GS_TERMS, MS_ALLOWED_INFLATION, OS_ASSET, OS_INFLATION, OS_LINK, OS_REPLACE, TS_BURN,
+    TS_INFLATION, TS_LINK, TS_REPLACE, TS_TRANSFER,
 };
 
 pub const IFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0x82, 0x65, 0x7f, 0x89, 0x08, 0x2f, 0x06, 0x27, 0x64, 0xdc, 0x04, 0x7c, 0xbb, 0xff, 0xad, 0x94,
-    0x2a, 0x82, 0x30, 0xc0, 0x41, 0xbc, 0xa3, 0x16, 0x43, 0x05, 0xba, 0x24, 0xc5, 0x95, 0xb4, 0x60,
+    0x8c, 0x2a, 0x66, 0x6d, 0xa0, 0x79, 0xbe, 0x23, 0x7b, 0x00, 0x36, 0xea, 0x33, 0xda, 0x3b, 0xf6,
+    0x67, 0xdc, 0x4b, 0xd8, 0xe3, 0xd5, 0xc3, 0x2b, 0xbf, 0xfe, 0x60, 0x49, 0xa2, 0xd7, 0x75, 0x6d,
 ]);
 
 pub(crate) fn ifa_lib_genesis() -> Lib {
@@ -96,7 +98,6 @@ pub(crate) fn ifa_lib_transfer() -> Lib {
         // Check if input count is 0
         put     a16[2],0;  // store 0 in a16[2]
         eq.n    a16[0],a16[2];  // check if input_count == 0
-        // TODO: fix comment
         jif     40;  // jump to 0x28 if input_count == 0
         // Input count > 0, check that output count >= input count
         put     a8[0],ERRNO_REPLACE_HIDDEN_BURN;  // set errno
@@ -108,6 +109,14 @@ pub(crate) fn ifa_lib_transfer() -> Lib {
         put     a8[0],ERRNO_REPLACE_NO_INPUT;  // set errno
         eq.n    a16[1],a16[0];  // check if output_count == input_count
         test;  // fail if output_count != input_count (=0)
+
+        // Link rights validation
+        put     a8[0],ERRNO_NON_EQUAL_IN_OUT;  // set errno
+        cnp     OS_LINK,a16[0];  // count input link rights
+        cns     OS_LINK,a16[1];  // count output link rights
+        eq.n    a16[0],a16[1];  // check if input_count == output_count
+        test;  // fail if output_count != input_count
+
         ret;  // return execution flow
     };
     Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong transfer validation script")
@@ -147,7 +156,7 @@ pub(crate) fn ifa_lib_inflation() -> Lib {
     Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong inflation validation script")
 }
 
-fn ifa_standard_types() -> StandardTypes { StandardTypes::with(rgb_contract_stl()) }
+fn ifa_standard_types() -> StandardTypes { StandardTypes::with(rgb_contract_id_stl()) }
 
 fn ifa_schema() -> Schema {
     let types = ifa_standard_types();
@@ -184,6 +193,14 @@ fn ifa_schema() -> Schema {
                 global_state_schema: GlobalStateSchema::once(types.get("RGBContract.RejectListUrl")),
                 name: fname!("rejectListUrl"),
             },
+            GS_LINKED_FROM_CONTRACT => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBCommit.ContractId")),
+                name: fname!("linkedFromContract"),
+            },
+            GS_LINKED_TO_CONTRACT => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBCommit.ContractId")),
+                name: fname!("linkedToContract"),
+            },
         },
         owned_types: tiny_bmap! {
             OS_ASSET => AssignmentDetails {
@@ -200,6 +217,11 @@ fn ifa_schema() -> Schema {
                 owned_state_schema: OwnedStateSchema::Declarative,
                 name: fname!("replaceRight"),
                 default_transition: TS_TRANSFER,
+            },
+            OS_LINK => AssignmentDetails {
+                owned_state_schema: OwnedStateSchema::Declarative,
+                name: fname!("linkRight"),
+                default_transition: TS_TRANSFER,
             }
         },
         genesis: GenesisSchema {
@@ -210,11 +232,13 @@ fn ifa_schema() -> Schema {
                 GS_ISSUED_SUPPLY => Occurrences::Once,
                 GS_MAX_SUPPLY => Occurrences::Once,
                 GS_REJECT_LIST_URL => Occurrences::NoneOrOnce,
+                GS_LINKED_FROM_CONTRACT => Occurrences::NoneOrOnce,
             },
             assignments: tiny_bmap! {
                 OS_ASSET => Occurrences::NoneOrMore,
                 OS_INFLATION => Occurrences::NoneOrMore,
                 OS_REPLACE => Occurrences::NoneOrMore,
+                OS_LINK => Occurrences::NoneOrOnce,
             },
             validator: Some(LibSite::with(0, ifa_lib_genesis().id())),
         },
@@ -226,12 +250,14 @@ fn ifa_schema() -> Schema {
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
-                        OS_REPLACE => Occurrences::NoneOrMore
+                        OS_REPLACE => Occurrences::NoneOrMore,
+                        OS_LINK => Occurrences::NoneOrOnce,
                     },
                     assignments: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
-                        OS_REPLACE => Occurrences::NoneOrMore
+                        OS_REPLACE => Occurrences::NoneOrMore,
+                        OS_LINK => Occurrences::NoneOrOnce,
                     },
                     validator: Some(LibSite::with(0, alu_id_transfer))
                 },
@@ -262,6 +288,7 @@ fn ifa_schema() -> Schema {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_REPLACE => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
+                        OS_LINK => Occurrences::NoneOrOnce,
                     },
                     assignments: none!(),
                     validator: None
@@ -283,6 +310,20 @@ fn ifa_schema() -> Schema {
                     validator: Some(LibSite::with(0, alu_id_transfer))
                 },
                 name: fname!("replace"),
+            },
+            TS_LINK => TransitionDetails {
+                transition_schema: TransitionSchema {
+                    metadata: none!(),
+                    globals: tiny_bmap! {
+                        GS_LINKED_TO_CONTRACT => Occurrences::Once,
+                    },
+                    inputs: tiny_bmap! {
+                        OS_LINK => Occurrences::Once,
+                    },
+                    assignments: none!(),
+                    validator: None
+                },
+                name: fname!("link"),
             },
         },
         default_assignment: Some(OS_ASSET),
@@ -316,6 +357,11 @@ impl IssuerWrapper for InflatableFungibleAsset {
         })
     }
 }
+
+impl LinkableIssuerWrapper for InflatableFungibleAsset {
+    type Wrapper<S: ContractStateRead> = IfaWrapper<S>;
+}
+
 #[derive(Clone, Eq, PartialEq, Debug, From)]
 pub struct IfaWrapper<S: ContractStateRead>(ContractData<S>);
 
@@ -390,6 +436,28 @@ impl<S: ContractStateRead> IfaWrapper<S> {
         filter: impl AssignmentsFilter + 'c,
     ) -> impl Iterator<Item = RightsAllocation> + 'c {
         self.0.rights_raw(OS_REPLACE, filter).unwrap()
+    }
+}
+
+fn extract_global_single_val(
+    mut global: impl Iterator<Item = StrictVal>,
+) -> Result<Option<ContractId>, LinkError> {
+    let Some(val) = global.next() else {
+        return Ok(None);
+    };
+    if global.next().is_some() {
+        return Err(LinkError::MultipleValues);
+    }
+    Ok(Some(ContractId::from_strict_val_unchecked(val)))
+}
+
+impl<S: ContractStateRead> LinkableSchemaWrapper<S> for IfaWrapper<S> {
+    fn link_to(&self) -> Result<Option<ContractId>, LinkError> {
+        extract_global_single_val(self.0.global("linkedToContract"))
+    }
+
+    fn link_from(&self) -> Result<Option<ContractId>, LinkError> {
+        extract_global_single_val(self.0.global("linkedFromContract"))
     }
 }
 
