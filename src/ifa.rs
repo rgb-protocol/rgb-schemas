@@ -27,7 +27,7 @@ use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
     AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, LinkError,
-    LinkableIssuerWrapper, LinkableSchemaWrapper, RightsAllocation, SchemaWrapper,
+    LinkableIssuerWrapper, LinkableSchemaWrapper, SchemaWrapper,
 };
 use rgbstd::persistence::{ContractStateRead, MemContract};
 use rgbstd::rgbcore::stl::rgb_contract_id_stl;
@@ -43,15 +43,14 @@ use strict_types::{StrictVal, TypeSystem};
 
 use crate::{
     ERRNO_INFLATION_EXCEEDS_ALLOWANCE, ERRNO_INFLATION_MISMATCH, ERRNO_ISSUED_MISMATCH,
-    ERRNO_NON_EQUAL_IN_OUT, ERRNO_REPLACE_HIDDEN_BURN, ERRNO_REPLACE_NO_INPUT, GS_ISSUED_SUPPLY,
-    GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL,
-    GS_TERMS, MS_ALLOWED_INFLATION, OS_ASSET, OS_INFLATION, OS_LINK, OS_REPLACE, TS_BURN,
-    TS_INFLATION, TS_LINK, TS_REPLACE, TS_TRANSFER,
+    ERRNO_NON_EQUAL_IN_OUT, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT,
+    GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL, GS_TERMS, MS_ALLOWED_INFLATION, OS_ASSET,
+    OS_INFLATION, OS_LINK, TS_BURN, TS_INFLATION, TS_LINK, TS_TRANSFER,
 };
 
 pub const IFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0x8c, 0x2a, 0x66, 0x6d, 0xa0, 0x79, 0xbe, 0x23, 0x7b, 0x00, 0x36, 0xea, 0x33, 0xda, 0x3b, 0xf6,
-    0x67, 0xdc, 0x4b, 0xd8, 0xe3, 0xd5, 0xc3, 0x2b, 0xbf, 0xfe, 0x60, 0x49, 0xa2, 0xd7, 0x75, 0x6d,
+    0xa7, 0xa1, 0xfe, 0xc2, 0xd0, 0xe0, 0x7a, 0x2f, 0x47, 0x1d, 0x45, 0x4b, 0x8c, 0xa5, 0xb4, 0xb4,
+    0xd7, 0x47, 0x1c, 0x52, 0xe1, 0x7c, 0x7c, 0x6b, 0x9f, 0xd4, 0x17, 0xf9, 0x04, 0x14, 0x13, 0xbf,
 ]);
 
 pub(crate) fn ifa_lib_genesis() -> Lib {
@@ -91,24 +90,6 @@ pub(crate) fn ifa_lib_transfer() -> Lib {
         test;  // check it didn't fail
         svs     OS_INFLATION;  // verify sum
         test;  // check it didn't fail
-
-        // Replace rights validation
-        cnp     OS_REPLACE,a16[0];  // count input replace rights
-        cns     OS_REPLACE,a16[1];  // count output replace rights
-        // Check if input count is 0
-        put     a16[2],0;  // store 0 in a16[2]
-        eq.n    a16[0],a16[2];  // check if input_count == 0
-        jif     40;  // jump to 0x28 if input_count == 0
-        // Input count > 0, check that output count >= input count
-        put     a8[0],ERRNO_REPLACE_HIDDEN_BURN;  // set errno
-        lt.u    a16[1],a16[0];  // output_count < input_count
-        inv     st0;  // output_count >= input_count
-        test;  // fail if output_count < input_count
-        ret;  // return execution flow
-        // 0x28: Input count is 0, output count must also be 0
-        put     a8[0],ERRNO_REPLACE_NO_INPUT;  // set errno
-        eq.n    a16[1],a16[0];  // check if output_count == input_count
-        test;  // fail if output_count != input_count (=0)
 
         // Link rights validation
         put     a8[0],ERRNO_NON_EQUAL_IN_OUT;  // set errno
@@ -213,11 +194,6 @@ fn ifa_schema() -> Schema {
                 name: fname!("inflationAllowance"),
                 default_transition: TS_TRANSFER
             },
-            OS_REPLACE => AssignmentDetails {
-                owned_state_schema: OwnedStateSchema::Declarative,
-                name: fname!("replaceRight"),
-                default_transition: TS_TRANSFER,
-            },
             OS_LINK => AssignmentDetails {
                 owned_state_schema: OwnedStateSchema::Declarative,
                 name: fname!("linkRight"),
@@ -237,7 +213,6 @@ fn ifa_schema() -> Schema {
             assignments: tiny_bmap! {
                 OS_ASSET => Occurrences::NoneOrMore,
                 OS_INFLATION => Occurrences::NoneOrMore,
-                OS_REPLACE => Occurrences::NoneOrMore,
                 OS_LINK => Occurrences::NoneOrOnce,
             },
             validator: Some(LibSite::with(0, ifa_lib_genesis().id())),
@@ -250,13 +225,11 @@ fn ifa_schema() -> Schema {
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
-                        OS_REPLACE => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
                     assignments: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
-                        OS_REPLACE => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
                     validator: Some(LibSite::with(0, alu_id_transfer))
@@ -286,7 +259,6 @@ fn ifa_schema() -> Schema {
                     globals: none!(),
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
-                        OS_REPLACE => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
@@ -294,22 +266,6 @@ fn ifa_schema() -> Schema {
                     validator: None
                 },
                 name: fname!("burn"),
-            },
-            TS_REPLACE => TransitionDetails {
-                transition_schema: TransitionSchema {
-                    metadata: none!(),
-                    globals: none!(),
-                    inputs: tiny_bmap! {
-                        OS_ASSET => Occurrences::OnceOrMore,
-                        OS_REPLACE => Occurrences::OnceOrMore,
-                    },
-                    assignments: tiny_bmap! {
-                        OS_ASSET => Occurrences::OnceOrMore,
-                        OS_REPLACE => Occurrences::OnceOrMore,
-                    },
-                    validator: Some(LibSite::with(0, alu_id_transfer))
-                },
-                name: fname!("replace"),
             },
             TS_LINK => TransitionDetails {
                 transition_schema: TransitionSchema {
@@ -429,13 +385,6 @@ impl<S: ContractStateRead> IfaWrapper<S> {
         filter: impl AssignmentsFilter + 'c,
     ) -> impl Iterator<Item = FungibleAllocation> + 'c {
         self.0.fungible_raw(OS_INFLATION, filter).unwrap()
-    }
-
-    pub fn replace_rights<'c>(
-        &'c self,
-        filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = RightsAllocation> + 'c {
-        self.0.rights_raw(OS_REPLACE, filter).unwrap()
     }
 }
 

@@ -22,7 +22,7 @@ This repository provides the following RGB schemata:
 * __Non-inflatable assets (NIA)__.
   This is the simplest form of a fungible asset/token, which doesn't provide
   such features as secondary issue, ability to change asset name and
-  parameters, ability to burn or replace the asset.
+  parameters, ability to burn the asset.
 
 * __Unique digital asset (UDA)__.
   This is the simplest form of an NFT, which has one issuance of a single
@@ -38,7 +38,7 @@ This repository provides the following RGB schemata:
 
 * __Inflatable fungible assets (IFA)__.
   **Not production-ready**
-  This is a fungible asset that supports *inflate*, *burn* and *replace* transitions.
+  This is a fungible asset that supports *inflate*, *burn* and *link* transitions.
 
 ## License
 

@@ -55,12 +55,10 @@ pub const GS_PUBKEY: GlobalStateType = GlobalStateType::with(3006);
 
 pub const OS_ASSET: AssignmentType = AssignmentType::with(4000);
 pub const OS_INFLATION: AssignmentType = AssignmentType::with(4010);
-pub const OS_REPLACE: AssignmentType = AssignmentType::with(4012);
 pub const OS_LINK: AssignmentType = AssignmentType::with(4013);
 
 pub const TS_INFLATION: TransitionType = TransitionType::with(8000);
 pub const TS_BURN: TransitionType = TransitionType::with(8010);
-pub const TS_REPLACE: TransitionType = TransitionType::with(8011);
 pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
 pub const TS_LINK: TransitionType = TransitionType::with(8012);
 
@@ -73,8 +71,6 @@ pub const ERRNO_MISSING_PUBKEY: u8 = 20;
 pub const ERRNO_INVALID_SIGNATURE: u8 = 21;
 pub const ERRNO_INFLATION_MISMATCH: u8 = 30;
 pub const ERRNO_INFLATION_EXCEEDS_ALLOWANCE: u8 = 31;
-pub const ERRNO_REPLACE_NO_INPUT: u8 = 35;
-pub const ERRNO_REPLACE_HIDDEN_BURN: u8 = 36;
 
 pub mod dumb {
     use rgbstd::validation::{ResolveWitness, WitnessResolverError, WitnessStatus};

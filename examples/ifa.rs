@@ -14,7 +14,6 @@ fn main() {
         Txid::from_str("14295d5bb1a191cdb6286dc0944df938421e3dfcbf0811353ccac4100c2068c5").unwrap();
     let beneficiary_1 = GenesisSeal::new_random(beneficiary_txid, 1);
     let beneficiary_2 = GenesisSeal::new_random(beneficiary_txid, 2);
-    let beneficiary_3 = GenesisSeal::new_random(beneficiary_txid, 3);
 
     let spec = AssetSpec::new("TEST", "Test asset", Precision::CentiMicro);
 
@@ -61,8 +60,6 @@ fn main() {
             max_supply.value() - issued_supply.value(),
         )
         .expect("invalid fungible state")
-        .add_rights("replaceRight", beneficiary_3)
-        .expect("invalid void state")
         .issue_contract()
         .expect("contract doesn't fit schema requirements");
 
