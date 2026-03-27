@@ -23,10 +23,10 @@ name = "schemata"
 amplify = "=4.8.1"
 rgb-strict-types = "~1.0.1"
 rgb-aluvm = "0.11.1-rc.2"
-rgb-ops = { version = "0.11.1-rc.8", features = ["fs"] }
+rgb-ops = { version = "0.11.1-rc.9", features = ["fs"] }
 
 [dev-dependencies]
-rgb-ops = { version = "0.11.1-rc.8", features = [
+rgb-ops = { version = "0.11.1-rc.9", features = [
     "fs",
     "serde",
 ] }
