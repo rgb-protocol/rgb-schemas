@@ -78,12 +78,12 @@ pub const ERRNO_BURN_ZERO: u8 = 41;
 
 pub mod dumb {
     use rgbstd::validation::{ResolveWitness, WitnessResolverError, WitnessStatus};
-    use rgbstd::{ChainNet, Txid};
+    use rgbstd::{ChainNet, PubWitness};
 
     pub struct NoResolver;
 
     impl ResolveWitness for NoResolver {
-        fn resolve_witness(&self, _: Txid) -> Result<WitnessStatus, WitnessResolverError> {
+        fn resolve_witness(&self, _: &PubWitness) -> Result<WitnessStatus, WitnessResolverError> {
             unreachable!()
         }
 

@@ -769,8 +769,7 @@ dependencies = [
 [[package]]
 name = "rgb-consensus"
 version = "0.11.1-rc.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "535483ee9143782e33ddebd3eda465de0184061fc3c480e24990e42fefc58bb0"
+source = "git+https://github.com/rgb-protocol/rgb-consensus?branch=s%2Fspv#bed79b55f3df5309d6522f8dd249b3272a862b39"
 dependencies = [
  "amplify",
  "baid64",
@@ -796,8 +795,7 @@ dependencies = [
 [[package]]
 name = "rgb-invoicing"
 version = "0.11.1-rc.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10400124af86de579b0f13603e014512b6166ad94ea791212b71579ffb91dd8a"
+source = "git+https://github.com/rgb-protocol/rgb-ops?branch=s%2Fspv#be066edf69f5ff8def65c885668a7b61aecd718b"
 dependencies = [
  "amplify",
  "baid64",
@@ -815,8 +813,7 @@ dependencies = [
 [[package]]
 name = "rgb-ops"
 version = "0.11.1-rc.10"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3782a5ff1e5408e23c2d14fc556347684f5c8f72d96c4ca357527a3dbffb7378"
+source = "git+https://github.com/rgb-protocol/rgb-ops?branch=s%2Fspv#be066edf69f5ff8def65c885668a7b61aecd718b"
 dependencies = [
  "amplify",
  "baid64",
