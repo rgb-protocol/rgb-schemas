@@ -17,13 +17,13 @@ jobs:
   default:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo check --workspace
   no-default:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo check --workspace --no-default-features
   features:
@@ -33,7 +33,7 @@ jobs:
       matrix:
         feature: [ fs, log ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Check ${{matrix.feature}} (no default features)
         run: cargo check --workspace --no-default-features --features=${{matrix.feature}}
@@ -46,7 +46,7 @@ jobs:
       matrix:
         os: [ ubuntu-22.04, ubuntu-latest, macos-14, macos-latest, windows-2022, windows-latest ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - name: Platform ${{matrix.os}}
         run: cargo check --workspace --all-features # we skip test targets here to be sure that the main library can be built
@@ -57,7 +57,7 @@ jobs:
       matrix:
         toolchain: [ nightly, beta, stable, 1.85.0 ]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: ${{matrix.toolchain}}
