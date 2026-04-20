@@ -38,20 +38,32 @@ use rgbstd::schema::{
 use rgbstd::stl::{AssetSpec, ContractTerms, RejectListUrl, StandardTypes};
 use rgbstd::validation::Scripts;
 use rgbstd::vm::RgbIsa;
-use rgbstd::{rgbasm, Amount, ContractId, GlobalDetails, MetaDetails, SchemaId, TransitionDetails};
+use rgbstd::{
+    rgbasm, Amount, AssignmentType, ContractId, GlobalDetails, MetaDetails, MetaType, SchemaId,
+    TransitionDetails,
+};
 use strict_types::{StrictVal, TypeSystem};
 
 use crate::{
-    ERRNO_INFLATION_EXCEEDS_ALLOWANCE, ERRNO_INFLATION_MISMATCH, ERRNO_ISSUED_MISMATCH,
-    ERRNO_NON_EQUAL_IN_OUT, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT,
-    GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL, GS_TERMS, MS_ALLOWED_INFLATION, OS_ASSET,
-    OS_INFLATION, OS_LINK, TS_BURN, TS_INFLATION, TS_LINK, TS_TRANSFER,
+    ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_INFLATION_EXCEEDS_ALLOWANCE,
+    ERRNO_INFLATION_MISMATCH, ERRNO_ISSUED_MISMATCH, ERRNO_NON_EQUAL_IN_OUT, GS_ISSUED_SUPPLY,
+    GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_MAX_SUPPLY, GS_NOMINAL, GS_REJECT_LIST_URL,
+    GS_TERMS, MS_ALLOWED_INFLATION, MS_BURNED_ASSET, MS_BURNED_INFLATION, OS_ASSET, OS_INFLATION,
+    OS_LINK, TS_BURN, TS_INFLATION, TS_LINK, TS_TRANSFER,
 };
 
 pub const IFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0xa7, 0xa1, 0xfe, 0xc2, 0xd0, 0xe0, 0x7a, 0x2f, 0x47, 0x1d, 0x45, 0x4b, 0x8c, 0xa5, 0xb4, 0xb4,
-    0xd7, 0x47, 0x1c, 0x52, 0xe1, 0x7c, 0x7c, 0x6b, 0x9f, 0xd4, 0x17, 0xf9, 0x04, 0x14, 0x13, 0xbf,
+    0x22, 0x98, 0xc9, 0x84, 0x52, 0xf3, 0xde, 0x8c, 0xb0, 0x60, 0xa4, 0x31, 0x3b, 0x72, 0xa6, 0x16,
+    0x04, 0x74, 0x01, 0xae, 0x35, 0xe6, 0x79, 0x53, 0x36, 0xb3, 0x72, 0x10, 0x5a, 0x8c, 0x64, 0x21,
 ]);
+
+pub fn burn_meta_by_assignment(assignment_type: &AssignmentType) -> MetaType {
+    match assignment_type {
+        &OS_ASSET => MS_BURNED_ASSET,
+        &OS_INFLATION => MS_BURNED_INFLATION,
+        a => panic!("unexpected assignment type {a}"),
+    }
+}
 
 pub(crate) fn ifa_lib_genesis() -> Lib {
     #[allow(clippy::diverging_sub_expression)]
@@ -120,7 +132,7 @@ pub(crate) fn ifa_lib_inflation() -> Lib {
 
         // Check reported allowed inflation equals sum of inflation rights in output
         put     a8[0],ERRNO_INFLATION_MISMATCH;  // set errno
-        ldm     MS_ALLOWED_INFLATION,s16[0];  // read allowed inflation global state
+        ldm     MS_ALLOWED_INFLATION,s16[0];  // read allowed inflation metadata
         extr    s16[0],a64[0],a16[0];  // and store it in a64[0]
         sas     OS_INFLATION;  // check sum of inflation rights in output equals a64[0]
         test;
@@ -137,6 +149,103 @@ pub(crate) fn ifa_lib_inflation() -> Lib {
     Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong inflation validation script")
 }
 
+pub(crate) fn ifa_lib_burn() -> Lib {
+    const BEFORE_LOOP: u16 = 16;
+    const LOOP: u16 = 20;
+    const AFTER_LOOP: u16 = 36;
+
+    const LOOP_STRT_1: u16 = BEFORE_LOOP;
+    const LOOP_EXIT_1: u16 = LOOP_STRT_1 + LOOP;
+    const LOOP_STRT_2: u16 = LOOP_EXIT_1 + AFTER_LOOP + BEFORE_LOOP;
+    const LOOP_EXIT_2: u16 = LOOP_STRT_2 + LOOP;
+
+    #[allow(clippy::diverging_sub_expression)]
+    let code: Vec<Instr<RgbIsa<MemContract>>> = rgbasm! {
+        // 1. VALIDATE OS_ASSET BURN
+        // 1.1 load sum of OS_ASSET outputs into a64[0]
+        put     a8[0],ERRNO_BURN_MISMATCH;  // set errno
+        put     a16[0],0; // index
+        put     a64[0],0; // accumulator
+        cns     OS_ASSET,a16[1]; // count OS_ASSET assignments
+        // loop through all OS_ASSET assignments and sum their values into a64[0]
+        // *LOOP_START_1* jump destination
+        eq.n    a16[0],a16[1];
+        jif     LOOP_EXIT_1; // if we cycled all assignments, end loop
+        ldf     OS_ASSET,a16[0],a64[1]; // load assignment at the current index
+        add.uc  a64[1],a64[0]; // add it to the accumulator
+        test;
+        inc     a16[0]; // increment index
+        jmp     LOOP_STRT_1; // go to the next iteration
+        // *LOOP_EXIT_1* jump destination
+
+        // 1.2 check that sum of inputs equals burned amount plus sum of outputs
+        put     a16[0],0;
+        ldm     MS_BURNED_ASSET,s16[0];
+        extr    s16[0],a64[1],a16[0];
+        test;
+        add.uc  a64[1],a64[0];
+        test;
+        sps     OS_ASSET;
+        test;
+
+        // 1.3 check that some amount is actually burned (pure transfer is forbidden)
+        // fail if MS_BURNED_ASSET = 0 AND there are OS_ASSET inputs
+        put     a8[0],ERRNO_BURN_ZERO;  // set errno
+        ifz     a64[1];
+        st.s    a8[1]; // burned_amount metadata = 0
+        ifz     a64[0]; // we already checked this equals the sum of inputs
+        inv     st0;
+        st.n    a8[1]; // AND os_asset input > 0
+        ifz     a8[1];
+        test;
+
+        // 2. VALIDATE OS_INFLATION BURN
+        // 2.1 load sum of OS_INFLATION outputs into a64[0]
+        put     a8[0],ERRNO_BURN_MISMATCH;  // set errno
+        put     a16[0],0; // index
+        put     a64[0],0; // accumulator
+        cns     OS_INFLATION,a16[1]; // count OS_INFLATION assignments
+        // loop through all OS_INFLATION assignments and sum their values into a64[0]
+        // *LOOP_START_2* jump destination
+        eq.n    a16[0],a16[1];
+        jif     LOOP_EXIT_2; // if we cycled all assignments, end loop
+        ldf     OS_INFLATION,a16[0],a64[1]; // load assignment at the current index
+        add.uc  a64[1],a64[0]; // add it to the accumulator
+        test;
+        inc     a16[0]; // increment index
+        jmp     LOOP_STRT_2; // go to the next iteration
+        // *LOOP_EXIT_2* jump destination
+
+        // 2.2 check that sum of inputs equals burned amount plus sum of outputs
+        put     a16[0],0;
+        ldm     MS_BURNED_INFLATION,s16[0];
+        extr    s16[0],a64[1],a16[0];
+        test;
+        add.uc  a64[1],a64[0];
+        test;
+        sps     OS_INFLATION;
+        test;
+
+        // 2.3 check that some amount is actually burned (pure transfer is forbidden)
+        // fail if MS_BURNED_INFLATION = 0 AND there are OS_INFLATION inputs
+        put     a8[0],ERRNO_BURN_ZERO;  // set errno
+        ifz     a64[1];
+        st.s    a8[1]; // burned_amount metadata = 0
+        ifz     a64[0]; // we already checked this equals the sum of inputs
+        inv     st0;
+        st.n    a8[1]; // AND os_inflation input > 0
+        ifz     a8[1];
+        test;
+
+        ret;
+    };
+    let aluvm_script =
+        Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong burn validation script");
+    let script_length = aluvm_script.code_segment().len() as u16;
+    assert_eq!(script_length, LOOP_EXIT_2 + AFTER_LOOP + 1 /* ret */);
+    aluvm_script
+}
+
 fn ifa_standard_types() -> StandardTypes { StandardTypes::with(rgb_contract_id_stl()) }
 
 fn ifa_schema() -> Schema {
@@ -151,7 +260,15 @@ fn ifa_schema() -> Schema {
             MS_ALLOWED_INFLATION => MetaDetails {
                 sem_id: types.get("RGBContract.Amount"),
                 name: fname!("allowedInflation"),
-            }
+            },
+            burn_meta_by_assignment(&OS_ASSET) => MetaDetails {
+                sem_id: types.get("RGBContract.Amount"),
+                name: fname!("burnedAsset"),
+            },
+            burn_meta_by_assignment(&OS_INFLATION) => MetaDetails {
+                sem_id: types.get("RGBContract.Amount"),
+                name: fname!("burnedInflation"),
+            },
         },
         global_types: tiny_bmap! {
             GS_NOMINAL => GlobalDetails {
@@ -255,15 +372,18 @@ fn ifa_schema() -> Schema {
             },
             TS_BURN => TransitionDetails {
                 transition_schema: TransitionSchema {
-                    metadata: none!(),
+                    metadata: Confined::from_iter_checked([OS_ASSET, OS_INFLATION].iter().map(burn_meta_by_assignment)),
                     globals: none!(),
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
                         OS_INFLATION => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
-                    assignments: none!(),
-                    validator: None
+                    assignments: tiny_bmap! {
+                        OS_ASSET => Occurrences::NoneOrMore,
+                        OS_INFLATION => Occurrences::NoneOrMore,
+                    },
+                    validator: Some(LibSite::with(0, ifa_lib_burn().id()))
                 },
                 name: fname!("burn"),
             },
@@ -306,10 +426,14 @@ impl IssuerWrapper for InflatableFungibleAsset {
         let alu_lib_inflation = ifa_lib_inflation();
         let alu_id_inflation = alu_lib_inflation.id();
 
+        let alu_lib_burn = ifa_lib_burn();
+        let alu_id_burn = alu_lib_burn.id();
+
         Confined::from_checked(bmap! {
             alu_id_genesis => alu_lib_genesis,
             alu_id_transfer => alu_lib_transfer,
             alu_id_inflation => alu_lib_inflation,
+            alu_id_burn => alu_lib_burn,
         })
     }
 }

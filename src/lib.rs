@@ -31,7 +31,7 @@ mod uda;
 mod ifa;
 
 pub use cfa::{CfaWrapper, CollectibleFungibleAsset, CFA_SCHEMA_ID};
-pub use ifa::{IfaWrapper, InflatableFungibleAsset, IFA_SCHEMA_ID};
+pub use ifa::{burn_meta_by_assignment, IfaWrapper, InflatableFungibleAsset, IFA_SCHEMA_ID};
 pub use nia::{NiaWrapper, NonInflatableAsset, NIA_SCHEMA_ID};
 pub use pfa::{PermissionedFungibleAsset, PfaWrapper, PFA_SCHEMA_ID};
 use rgbstd::{AssignmentType, GlobalStateType, MetaType, TransitionType};
@@ -63,6 +63,8 @@ pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
 pub const TS_LINK: TransitionType = TransitionType::with(8012);
 
 pub const MS_ALLOWED_INFLATION: MetaType = MetaType::with(1000);
+pub const MS_BURNED_ASSET: MetaType = MetaType::with(1001);
+pub const MS_BURNED_INFLATION: MetaType = MetaType::with(1002);
 
 pub const ERRNO_NON_EQUAL_IN_OUT: u8 = 0;
 pub const ERRNO_ISSUED_MISMATCH: u8 = 1;
@@ -71,6 +73,8 @@ pub const ERRNO_MISSING_PUBKEY: u8 = 20;
 pub const ERRNO_INVALID_SIGNATURE: u8 = 21;
 pub const ERRNO_INFLATION_MISMATCH: u8 = 30;
 pub const ERRNO_INFLATION_EXCEEDS_ALLOWANCE: u8 = 31;
+pub const ERRNO_BURN_MISMATCH: u8 = 40;
+pub const ERRNO_BURN_ZERO: u8 = 41;
 
 pub mod dumb {
     use rgbstd::validation::{ResolveWitness, WitnessResolverError, WitnessStatus};

@@ -47,3 +47,6 @@ log = [
 fs = [
     "rgb-ops/fs",
 ]
+
+[patch.crates-io]
+rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus.git", branch = "master"}
