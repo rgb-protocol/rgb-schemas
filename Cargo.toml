@@ -1,6 +1,6 @@
 [package]
 name = "rgb-schemas"
-version = "0.11.1-rc.9"
+version = "0.11.1-rc.10"
 description = "Collection of the official RGB smart contract schemata"
 keywords = ["bitcoin", "lightning", "rgb", "smart-contracts", "lnp-bp"]
 categories = ["cryptography::cryptocurrencies"]
@@ -22,11 +22,11 @@ name = "schemata"
 [dependencies]
 amplify = "=4.8.1"
 rgb-strict-types = "~1.0.1"
-rgb-aluvm = "0.11.1-rc.2"
-rgb-ops = { version = "0.11.1-rc.9", features = ["fs"] }
+rgb-aluvm = "0.11.1-rc.3"
+rgb-ops = { version = "0.11.1-rc.10", features = ["fs"] }
 
 [dev-dependencies]
-rgb-ops = { version = "0.11.1-rc.9", features = [
+rgb-ops = { version = "0.11.1-rc.10", features = [
     "fs",
     "serde",
 ] }
@@ -47,6 +47,3 @@ log = [
 fs = [
     "rgb-ops/fs",
 ]
-
-[patch.crates-io]
-rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus.git", branch = "master"}
