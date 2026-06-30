@@ -40,6 +40,11 @@ This repository provides the following RGB schemata:
   **Not production-ready**
   This is a fungible asset that supports *inflate*, *burn* and *link* transitions.
 
+* __Bridged fungible assets (BFA)__.
+  **Not production-ready**
+  This is a fungible asset that is bridged from a different chain through external anchors.
+  It supports *inflate*, *burn* and *link* transitions.
+
 ## License
 
 See [LICENSE](LICENSE) file.

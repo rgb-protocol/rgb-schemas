@@ -24,17 +24,21 @@ extern crate amplify;
 #[macro_use]
 extern crate strict_types;
 
+mod bfa;
 mod cfa;
 mod nia;
 mod pfa;
 mod uda;
 mod ifa;
 
+pub use bfa::{BfaWrapper, BridgeLocationError, BridgedFungibleAsset, BFA_SCHEMA_ID};
 pub use cfa::{CfaWrapper, CollectibleFungibleAsset, CFA_SCHEMA_ID};
-pub use ifa::{burn_meta_by_assignment, IfaWrapper, InflatableFungibleAsset, IFA_SCHEMA_ID};
+pub use ifa::{burn_global_by_assignment, IfaWrapper, InflatableFungibleAsset, IFA_SCHEMA_ID};
 pub use nia::{NiaWrapper, NonInflatableAsset, NIA_SCHEMA_ID};
 pub use pfa::{PermissionedFungibleAsset, PfaWrapper, PFA_SCHEMA_ID};
-use rgbstd::{AssignmentType, GlobalStateType, MetaType, TransitionType};
+use rgbstd::contract::LinkError;
+use rgbstd::{AssignmentType, ContractId, GlobalStateType, MetaType, TransitionType};
+use strict_types::StrictVal;
 pub use uda::{UdaWrapper, UniqueDigitalAsset, UDA_SCHEMA_ID};
 
 pub const GS_ART: GlobalStateType = GlobalStateType::with(3000);
@@ -46,28 +50,36 @@ pub const GS_DETAILS: GlobalStateType = GlobalStateType::with(3004);
 pub const GS_ENGRAVINGS: GlobalStateType = GlobalStateType::with(2103);
 pub const GS_ISSUED_SUPPLY: GlobalStateType = GlobalStateType::with(2010);
 pub const GS_MAX_SUPPLY: GlobalStateType = GlobalStateType::with(2011);
+pub const GS_BURNED_ASSET: GlobalStateType = GlobalStateType::with(2015);
+pub const GS_BURNED_INFLATION: GlobalStateType = GlobalStateType::with(2016);
 pub const GS_NAME: GlobalStateType = GlobalStateType::with(3001);
 pub const GS_NOMINAL: GlobalStateType = GlobalStateType::with(2000);
 pub const GS_PRECISION: GlobalStateType = GlobalStateType::with(3005);
 pub const GS_TERMS: GlobalStateType = GlobalStateType::with(2001);
 pub const GS_TOKENS: GlobalStateType = GlobalStateType::with(2102);
 pub const GS_PUBKEY: GlobalStateType = GlobalStateType::with(3006);
+pub const GS_BRIDGED_SUPPLY: GlobalStateType = GlobalStateType::with(3007);
+pub const GS_BRIDGE_LOCATION: GlobalStateType = GlobalStateType::with(3008);
+pub const GS_BURN_REASON: GlobalStateType = GlobalStateType::with(3009);
 
 pub const OS_ASSET: AssignmentType = AssignmentType::with(4000);
 pub const OS_INFLATION: AssignmentType = AssignmentType::with(4010);
-pub const OS_LINK: AssignmentType = AssignmentType::with(4013);
+pub const OS_LINK: AssignmentType = AssignmentType::with(4012);
+pub const OS_MINT: AssignmentType = AssignmentType::with(4013);
 
 pub const TS_INFLATION: TransitionType = TransitionType::with(8000);
 pub const TS_BURN: TransitionType = TransitionType::with(8010);
 pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
 pub const TS_LINK: TransitionType = TransitionType::with(8012);
+pub const TS_MINT: TransitionType = TransitionType::with(8013);
 
 pub const MS_ALLOWED_INFLATION: MetaType = MetaType::with(1000);
-pub const MS_BURNED_ASSET: MetaType = MetaType::with(1001);
-pub const MS_BURNED_INFLATION: MetaType = MetaType::with(1002);
+pub const MS_AFTER_BLOCK: MetaType = MetaType::with(1003);
 
 pub const ERRNO_NON_EQUAL_IN_OUT: u8 = 0;
 pub const ERRNO_ISSUED_MISMATCH: u8 = 1;
+pub const ERRNO_MISSING_INPUT: u8 = 2;
+pub const ERRNO_HIDDEN_BURN: u8 = 3;
 pub const ERRNO_NON_FRACTIONAL: u8 = 10;
 pub const ERRNO_MISSING_PUBKEY: u8 = 20;
 pub const ERRNO_INVALID_SIGNATURE: u8 = 21;
@@ -75,6 +87,22 @@ pub const ERRNO_INFLATION_MISMATCH: u8 = 30;
 pub const ERRNO_INFLATION_EXCEEDS_ALLOWANCE: u8 = 31;
 pub const ERRNO_BURN_MISMATCH: u8 = 40;
 pub const ERRNO_BURN_ZERO: u8 = 41;
+
+/// Extracts a single-item global state value as a [`ContractId`]
+///
+/// Used by schemas implementing `LinkableSchemaWrapper` to read the
+/// `linkedToContract`/`linkedFromContract` globals.
+pub(crate) fn extract_single_contract_id(
+    mut global: impl Iterator<Item = StrictVal>,
+) -> Result<Option<ContractId>, LinkError> {
+    let Some(val) = global.next() else {
+        return Ok(None);
+    };
+    if global.next().is_some() {
+        return Err(LinkError::MultipleValues);
+    }
+    Ok(Some(ContractId::from_strict_val_unchecked(val)))
+}
 
 pub mod dumb {
     use rgbstd::validation::{ResolveWitness, WitnessResolverError, WitnessStatus};

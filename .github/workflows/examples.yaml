@@ -24,4 +24,5 @@ jobs:
       - run: cargo run --example cfa
       - run: cargo run --example pfa
       - run: cargo run --example uda
+      - run: cargo run --example bfa
       - run: git diff --quiet test/ || exit 1

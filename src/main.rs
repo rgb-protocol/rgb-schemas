@@ -27,11 +27,12 @@ use rgbstd::contract::{FilteredContractState, IssuerWrapper};
 use rgbstd::validation::SchemaDefinition;
 use rgbstd::vm::RgbIsa;
 use schemata::{
-    CollectibleFungibleAsset, InflatableFungibleAsset, NonInflatableAsset,
+    BridgedFungibleAsset, CollectibleFungibleAsset, InflatableFungibleAsset, NonInflatableAsset,
     PermissionedFungibleAsset, UniqueDigitalAsset,
 };
 
 fn main() -> io::Result<()> {
+    bfa()?;
     cfa()?;
     ifa()?;
     nia()?;
@@ -86,6 +87,16 @@ fn ifa() -> io::Result<()> {
 
     schema_def.save_file("schemata/InflatableFungibleAsset.rgb")?;
     schema_def.save_armored("schemata/InflatableFungibleAsset.rgba")?;
+    print_lib(&schema_def);
+
+    Ok(())
+}
+
+fn bfa() -> io::Result<()> {
+    let schema_def = BridgedFungibleAsset::schema_definition();
+
+    schema_def.save_file("schemata/BridgedFungibleAsset.rgb")?;
+    schema_def.save_armored("schemata/BridgedFungibleAsset.rgba")?;
     print_lib(&schema_def);
 
     Ok(())
