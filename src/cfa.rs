@@ -32,9 +32,8 @@ use rgbstd::schema::{
     Schema, TransitionDetails, TransitionSchema,
 };
 use rgbstd::stl::{rgb_contract_stl, ContractTerms, Details, Name, StandardTypes};
-use rgbstd::validation::Scripts;
+use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::{Amount, OwnedStateSchema, Precision, SchemaId};
-use strict_types::TypeSystem;
 
 use crate::nia::{nia_lib, FN_NIA_GENESIS_OFFSET, FN_NIA_TRANSFER_OFFSET};
 use crate::{
@@ -136,7 +135,7 @@ impl IssuerWrapper for CollectibleFungibleAsset {
 
     fn schema() -> Schema { cfa_schema() }
 
-    fn types() -> TypeSystem { cfa_standard_types().type_system(cfa_schema()) }
+    fn libs() -> TypeLibs { cfa_standard_types().libs() }
 
     fn scripts() -> Scripts {
         let lib = nia_lib();
@@ -146,7 +145,7 @@ impl IssuerWrapper for CollectibleFungibleAsset {
 
 impl<S: ContractStateRead> SchemaWrapper<S> for CfaWrapper<S> {
     fn with(data: ContractData<S>) -> Self {
-        if data.schema.schema_id() != CFA_SCHEMA_ID {
+        if data.schema().schema_id() != CFA_SCHEMA_ID {
             panic!("the provided schema is not CFA");
         }
         Self(data)

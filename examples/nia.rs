@@ -1,6 +1,8 @@
 mod common;
 
-use common::{default_terms, genesis_seal, stock_with_kit, BENEFICIARY_TXID, CREATED_AT};
+use common::{
+    default_terms, genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT,
+};
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{FilterIncludeAll, FungibleAllocation, IssuerWrapper};
 use rgbstd::invoice::Precision;
@@ -18,7 +20,8 @@ fn main() {
 
     let issued_supply = Amount::from(100000u64);
 
-    let mut stock = stock_with_kit("schemata/NonInflatableAsset.rgb");
+    let mut stock =
+        stock_with_schema_definition::<NonInflatableAsset>("schemata/NonInflatableAsset.rgb");
 
     let contract = stock
         .contract_builder(

@@ -1,9 +1,11 @@
 use std::str::FromStr;
 
-use rgbstd::containers::{FileContent, Kit};
+use rgbstd::containers::FileContent;
+use rgbstd::contract::IssuerWrapper;
 use rgbstd::persistence::Stock;
 use rgbstd::stl::{ContractTerms, RicardianContract};
 use rgbstd::txout::BlindSeal;
+use rgbstd::validation::SchemaDefinition;
 use rgbstd::{GenesisSeal, Txid};
 
 /// Fixed issuance timestamp so example output is reproducible.
@@ -20,10 +22,15 @@ pub fn default_terms() -> ContractTerms {
     }
 }
 
-pub fn stock_with_kit(schema_rgb: &str) -> Stock {
+/// Reads a schema definition off disk. It carries its own type libraries, so
+/// nothing has to be supplied from code.
+pub fn stock_with_schema_definition<C: IssuerWrapper>(schema_rgb: &str) -> Stock {
+    let _ = core::marker::PhantomData::<C>;
     let mut stock = Stock::in_memory();
-    let kit = Kit::load_file(schema_rgb).unwrap().validate().unwrap();
-    stock.import_kit(kit).expect("invalid issuer kit");
+    let schema_def = SchemaDefinition::load_file(schema_rgb).unwrap();
+    stock
+        .import_schema_definition(schema_def)
+        .expect("invalid schema definition");
     stock
 }
 

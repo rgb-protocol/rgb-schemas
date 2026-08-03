@@ -1,6 +1,8 @@
 mod common;
 
-use common::{default_terms, genesis_seal, stock_with_kit, BENEFICIARY_TXID, CREATED_AT};
+use common::{
+    default_terms, genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT,
+};
 use rgbstd::bitcoin::CompressedPublicKey;
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{FilterIncludeAll, FungibleAllocation, IssuerWrapper};
@@ -25,7 +27,9 @@ fn main() {
     ])
     .unwrap();
 
-    let mut stock = stock_with_kit("schemata/PermissionedFungibleAsset.rgb");
+    let mut stock = stock_with_schema_definition::<PermissionedFungibleAsset>(
+        "schemata/PermissionedFungibleAsset.rgb",
+    );
 
     let contract = stock
         .contract_builder(

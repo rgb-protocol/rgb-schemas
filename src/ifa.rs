@@ -36,13 +36,13 @@ use rgbstd::schema::{
     OwnedStateSchema, Schema, TransitionSchema,
 };
 use rgbstd::stl::{AssetSpec, ContractTerms, RejectListUrl, StandardTypes};
-use rgbstd::validation::Scripts;
+use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::RgbIsa;
 use rgbstd::{
     rgbasm, Amount, AssignmentType, ContractId, GlobalDetails, MetaDetails, MetaType, SchemaId,
     TransitionDetails,
 };
-use strict_types::{StrictVal, TypeSystem};
+use strict_types::StrictVal;
 
 use crate::{
     ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_INFLATION_EXCEEDS_ALLOWANCE,
@@ -414,7 +414,7 @@ impl IssuerWrapper for InflatableFungibleAsset {
 
     fn schema() -> Schema { ifa_schema() }
 
-    fn types() -> TypeSystem { ifa_standard_types().type_system(ifa_schema()) }
+    fn libs() -> TypeLibs { ifa_standard_types().libs() }
 
     fn scripts() -> Scripts {
         let alu_lib_genesis = ifa_lib_genesis();
@@ -447,7 +447,7 @@ pub struct IfaWrapper<S: ContractStateRead>(ContractData<S>);
 
 impl<S: ContractStateRead> SchemaWrapper<S> for IfaWrapper<S> {
     fn with(data: ContractData<S>) -> Self {
-        if data.schema.schema_id() != IFA_SCHEMA_ID {
+        if data.schema().schema_id() != IFA_SCHEMA_ID {
             panic!("the provided schema is not IFA");
         }
         Self(data)

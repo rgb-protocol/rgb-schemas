@@ -1,6 +1,8 @@
 mod common;
 
-use common::{default_terms, genesis_seal, stock_with_kit, BENEFICIARY_TXID, CREATED_AT};
+use common::{
+    default_terms, genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT,
+};
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{FilterIncludeAll, FungibleAllocation, IssuerWrapper};
 use rgbstd::invoice::Precision;
@@ -23,7 +25,9 @@ fn main() {
 
     let reject_list_url = RejectListUrl::from("example.xyz/reject");
 
-    let mut stock = stock_with_kit("schemata/InflatableFungibleAsset.rgb");
+    let mut stock = stock_with_schema_definition::<InflatableFungibleAsset>(
+        "schemata/InflatableFungibleAsset.rgb",
+    );
 
     let contract = stock
         .contract_builder(

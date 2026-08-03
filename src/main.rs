@@ -22,9 +22,10 @@
 use std::io;
 use std::io::stdout;
 
-use rgbstd::containers::{FileContent, Kit};
+use rgbstd::containers::FileContent;
 use rgbstd::contract::IssuerWrapper;
 use rgbstd::persistence::MemContract;
+use rgbstd::validation::SchemaDefinition;
 use rgbstd::vm::RgbIsa;
 use schemata::{
     CollectibleFungibleAsset, InflatableFungibleAsset, NonInflatableAsset,
@@ -42,92 +43,57 @@ fn main() -> io::Result<()> {
 }
 
 fn nia() -> io::Result<()> {
-    let schema = NonInflatableAsset::schema();
-    let lib = NonInflatableAsset::scripts();
-    let types = NonInflatableAsset::types();
+    let schema_def = NonInflatableAsset::schema_definition();
 
-    let mut kit = Kit::default();
-    kit.schemata.push(schema).unwrap();
-    kit.scripts.extend(lib.into_values()).unwrap();
-    kit.types = types;
-
-    kit.save_file("schemata/NonInflatableAsset.rgb")?;
-    kit.save_armored("schemata/NonInflatableAsset.rgba")?;
-    print_lib(&kit);
+    schema_def.save_file("schemata/NonInflatableAsset.rgb")?;
+    schema_def.save_armored("schemata/NonInflatableAsset.rgba")?;
+    print_lib(&schema_def);
 
     Ok(())
 }
 
 fn pfa() -> io::Result<()> {
-    let schema = PermissionedFungibleAsset::schema();
-    let lib = PermissionedFungibleAsset::scripts();
-    let types = PermissionedFungibleAsset::types();
+    let schema_def = PermissionedFungibleAsset::schema_definition();
 
-    let mut kit = Kit::default();
-    kit.schemata.push(schema).unwrap();
-    kit.scripts.extend(lib.into_values()).unwrap();
-    kit.types = types;
-
-    kit.save_file("schemata/PermissionedFungibleAsset.rgb")?;
-    kit.save_armored("schemata/PermissionedFungibleAsset.rgba")?;
-    print_lib(&kit);
+    schema_def.save_file("schemata/PermissionedFungibleAsset.rgb")?;
+    schema_def.save_armored("schemata/PermissionedFungibleAsset.rgba")?;
+    print_lib(&schema_def);
 
     Ok(())
 }
 
 fn uda() -> io::Result<()> {
-    let schema = UniqueDigitalAsset::schema();
-    let lib = UniqueDigitalAsset::scripts();
-    let types = UniqueDigitalAsset::types();
+    let schema_def = UniqueDigitalAsset::schema_definition();
 
-    let mut kit = Kit::default();
-    kit.schemata.push(schema).unwrap();
-    kit.scripts.extend(lib.into_values()).unwrap();
-    kit.types = types;
-
-    kit.save_file("schemata/UniqueDigitalAsset.rgb")?;
-    kit.save_armored("schemata/UniqueDigitalAsset.rgba")?;
-    print_lib(&kit);
+    schema_def.save_file("schemata/UniqueDigitalAsset.rgb")?;
+    schema_def.save_armored("schemata/UniqueDigitalAsset.rgba")?;
+    print_lib(&schema_def);
 
     Ok(())
 }
 
 fn cfa() -> io::Result<()> {
-    let schema = CollectibleFungibleAsset::schema();
-    let lib = CollectibleFungibleAsset::scripts();
-    let types = CollectibleFungibleAsset::types();
+    let schema_def = CollectibleFungibleAsset::schema_definition();
 
-    let mut kit = Kit::default();
-    kit.schemata.push(schema).unwrap();
-    kit.scripts.extend(lib.into_values()).unwrap();
-    kit.types = types;
-
-    kit.save_file("schemata/CollectibleFungibleAsset.rgb")?;
-    kit.save_armored("schemata/CollectibleFungibleAsset.rgba")?;
-    print_lib(&kit);
+    schema_def.save_file("schemata/CollectibleFungibleAsset.rgb")?;
+    schema_def.save_armored("schemata/CollectibleFungibleAsset.rgba")?;
+    print_lib(&schema_def);
 
     Ok(())
 }
 
 fn ifa() -> io::Result<()> {
-    let schema = InflatableFungibleAsset::schema();
-    let lib = InflatableFungibleAsset::scripts();
-    let types = InflatableFungibleAsset::types();
+    let schema_def = InflatableFungibleAsset::schema_definition();
 
-    let mut kit = Kit::default();
-    kit.schemata.push(schema).unwrap();
-    kit.scripts.extend(lib.into_values()).unwrap();
-    kit.types = types;
-
-    kit.save_file("schemata/InflatableFungibleAsset.rgb")?;
-    kit.save_armored("schemata/InflatableFungibleAsset.rgba")?;
-    print_lib(&kit);
+    schema_def.save_file("schemata/InflatableFungibleAsset.rgb")?;
+    schema_def.save_armored("schemata/InflatableFungibleAsset.rgba")?;
+    print_lib(&schema_def);
 
     Ok(())
 }
 
-fn print_lib(kit: &Kit) {
-    let alu_lib = kit.scripts.first().unwrap();
+fn print_lib(schema_def: &SchemaDefinition) {
+    let alu_lib = schema_def.scripts.values().next().unwrap();
     eprintln!("{alu_lib}");
     alu_lib
         .print_disassemble::<RgbIsa<MemContract>>(stdout())

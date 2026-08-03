@@ -4,7 +4,7 @@ use std::fs;
 
 use amplify::confinement::SmallBlob;
 use amplify::{Bytes, Wrapper};
-use common::{genesis_seal, stock_with_kit, BENEFICIARY_TXID, CREATED_AT};
+use common::{genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT};
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{DataAllocation, FilterIncludeAll, IssuerWrapper};
 use rgbstd::invoice::Precision;
@@ -46,7 +46,8 @@ fn main() {
 
     let allocation = Allocation::with(index, 1);
 
-    let mut stock = stock_with_kit("schemata/UniqueDigitalAsset.rgb");
+    let mut stock =
+        stock_with_schema_definition::<UniqueDigitalAsset>("schemata/UniqueDigitalAsset.rgb");
 
     let contract = stock
         .contract_builder(

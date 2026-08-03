@@ -34,11 +34,10 @@ use rgbstd::schema::{
     OwnedStateSchema, Schema, TransitionSchema,
 };
 use rgbstd::stl::{rgb_contract_stl, AssetSpec, ContractTerms, StandardTypes};
-use rgbstd::validation::Scripts;
+use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::opcodes::INSTR_SVS;
 use rgbstd::vm::RgbIsa;
 use rgbstd::{rgbasm, Amount, SchemaId, TransitionDetails};
-use strict_types::TypeSystem;
 
 use crate::{
     ERRNO_ISSUED_MISMATCH, ERRNO_NON_EQUAL_IN_OUT, GS_ISSUED_SUPPLY, GS_NOMINAL, GS_TERMS,
@@ -158,7 +157,7 @@ impl IssuerWrapper for NonInflatableAsset {
 
     fn schema() -> Schema { nia_schema() }
 
-    fn types() -> TypeSystem { nia_standard_types().type_system(nia_schema()) }
+    fn libs() -> TypeLibs { nia_standard_types().libs() }
 
     fn scripts() -> Scripts {
         let lib = nia_lib();
@@ -171,7 +170,7 @@ pub struct NiaWrapper<S: ContractStateRead>(ContractData<S>);
 
 impl<S: ContractStateRead> SchemaWrapper<S> for NiaWrapper<S> {
     fn with(data: ContractData<S>) -> Self {
-        if data.schema.schema_id() != NIA_SCHEMA_ID {
+        if data.schema().schema_id() != NIA_SCHEMA_ID {
             panic!("the provided schema is not NIA");
         }
         Self(data)
@@ -255,9 +254,7 @@ mod test {
 
         let builder = ContractBuilder::with(
             Identity::default(),
-            NonInflatableAsset::schema(),
-            NonInflatableAsset::types(),
-            NonInflatableAsset::scripts(),
+            NonInflatableAsset::schema_rules(),
             ChainNet::BitcoinTestnet4,
         )
         .add_global_state("spec", spec)

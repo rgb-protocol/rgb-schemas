@@ -33,11 +33,10 @@ use rgbstd::schema::{
     AssignmentDetails, GenesisSchema, GlobalStateSchema, Occurrences, Schema, TransitionSchema,
 };
 use rgbstd::stl::{rgb_contract_stl, AssetSpec, ContractTerms, StandardTypes, TokenData};
-use rgbstd::validation::Scripts;
+use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::opcodes::INSTR_LDG;
 use rgbstd::vm::RgbIsa;
 use rgbstd::{rgbasm, GlobalDetails, OwnedStateSchema, SchemaId, TransitionDetails};
-use strict_types::TypeSystem;
 
 use crate::{
     ERRNO_NON_EQUAL_IN_OUT, ERRNO_NON_FRACTIONAL, GS_ATTACH, GS_NOMINAL, GS_TERMS, GS_TOKENS,
@@ -189,7 +188,7 @@ impl IssuerWrapper for UniqueDigitalAsset {
 
     fn schema() -> Schema { uda_schema() }
 
-    fn types() -> TypeSystem { uda_standard_types().type_system(uda_schema()) }
+    fn libs() -> TypeLibs { uda_standard_types().libs() }
 
     fn scripts() -> Scripts {
         let lib = uda_lib();
@@ -199,7 +198,7 @@ impl IssuerWrapper for UniqueDigitalAsset {
 
 impl<S: ContractStateRead> SchemaWrapper<S> for UdaWrapper<S> {
     fn with(data: ContractData<S>) -> Self {
-        if data.schema.schema_id() != UDA_SCHEMA_ID {
+        if data.schema().schema_id() != UDA_SCHEMA_ID {
             panic!("the provided schema is not UDA");
         }
         Self(data)

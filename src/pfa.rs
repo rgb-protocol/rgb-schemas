@@ -34,10 +34,9 @@ use rgbstd::schema::{
     OwnedStateSchema, Schema, TransitionSchema,
 };
 use rgbstd::stl::{rgb_contract_stl, AssetSpec, ContractTerms, StandardTypes};
-use rgbstd::validation::Scripts;
+use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::RgbIsa;
 use rgbstd::{rgbasm, Amount, SchemaId, TransitionDetails};
-use strict_types::TypeSystem;
 
 use crate::{
     ERRNO_INVALID_SIGNATURE, ERRNO_ISSUED_MISMATCH, ERRNO_MISSING_PUBKEY, ERRNO_NON_EQUAL_IN_OUT,
@@ -165,7 +164,7 @@ impl IssuerWrapper for PermissionedFungibleAsset {
 
     fn schema() -> Schema { pfa_schema() }
 
-    fn types() -> TypeSystem { pfa_standard_types().type_system(pfa_schema()) }
+    fn libs() -> TypeLibs { pfa_standard_types().libs() }
 
     fn scripts() -> Scripts {
         let alu_lib_genesis = pfa_lib_genesis();
@@ -186,7 +185,7 @@ pub struct PfaWrapper<S: ContractStateRead>(ContractData<S>);
 
 impl<S: ContractStateRead> SchemaWrapper<S> for PfaWrapper<S> {
     fn with(data: ContractData<S>) -> Self {
-        if data.schema.schema_id() != PFA_SCHEMA_ID {
+        if data.schema().schema_id() != PFA_SCHEMA_ID {
             panic!("the provided schema is not PFA");
         }
         Self(data)
