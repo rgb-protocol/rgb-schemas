@@ -26,10 +26,10 @@ use aluvm::isa::Instr;
 use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, LinkError,
-    LinkableIssuerWrapper, LinkableSchemaWrapper, SchemaWrapper,
+    AssignmentsFilter, ContractData, ContractError, ContractStateRead, FilteredContractState,
+    FungibleAllocation, IssuerWrapper, LinkError, LinkableIssuerWrapper, LinkableSchemaWrapper,
+    SchemaWrapper,
 };
-use rgbstd::persistence::{ContractStateRead, MemContract};
 use rgbstd::rgbcore::stl::rgb_contract_id_stl;
 use rgbstd::schema::{
     AssignmentDetails, FungibleType, GenesisSchema, GlobalStateSchema, Occurrences,
@@ -90,7 +90,7 @@ pub(crate) fn ifa_lib_genesis() -> Lib {
 
         ret;
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code)
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
         .expect("wrong inflatable asset genesis valdiation script")
 }
 
@@ -112,7 +112,8 @@ pub(crate) fn ifa_lib_transfer() -> Lib {
 
         ret;  // return execution flow
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong transfer validation script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong transfer validation script")
 }
 
 pub(crate) fn ifa_lib_inflation() -> Lib {
@@ -146,7 +147,8 @@ pub(crate) fn ifa_lib_inflation() -> Lib {
 
         ret;
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong inflation validation script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong inflation validation script")
 }
 
 pub(crate) fn ifa_lib_burn() -> Lib {
@@ -160,7 +162,7 @@ pub(crate) fn ifa_lib_burn() -> Lib {
     const LOOP_EXIT_2: u16 = LOOP_STRT_2 + LOOP;
 
     #[allow(clippy::diverging_sub_expression)]
-    let code: Vec<Instr<RgbIsa<MemContract>>> = rgbasm! {
+    let code: Vec<Instr<RgbIsa<FilteredContractState>>> = rgbasm! {
         // 1. VALIDATE OS_ASSET BURN
         // 1.1 load sum of OS_ASSET outputs into a64[0]
         put     a8[0],ERRNO_BURN_MISMATCH;  // set errno
@@ -239,8 +241,8 @@ pub(crate) fn ifa_lib_burn() -> Lib {
 
         ret;
     };
-    let aluvm_script =
-        Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong burn validation script");
+    let aluvm_script = Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong burn validation script");
     let script_length = aluvm_script.code_segment().len() as u16;
     assert_eq!(script_length, LOOP_EXIT_2 + AFTER_LOOP + 1 /* ret */);
     aluvm_script
@@ -500,15 +502,15 @@ impl<S: ContractStateRead> IfaWrapper<S> {
     pub fn allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = FungibleAllocation> + 'c {
-        self.0.fungible_raw(OS_ASSET, filter).unwrap()
+    ) -> impl Iterator<Item = Result<FungibleAllocation, ContractError>> + 'c {
+        self.0.fungible_raw(OS_ASSET, filter)
     }
 
     pub fn inflation_allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = FungibleAllocation> + 'c {
-        self.0.fungible_raw(OS_INFLATION, filter).unwrap()
+    ) -> impl Iterator<Item = Result<FungibleAllocation, ContractError>> + 'c {
+        self.0.fungible_raw(OS_INFLATION, filter)
     }
 }
 

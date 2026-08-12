@@ -24,9 +24,9 @@
 use aluvm::library::LibSite;
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, SchemaWrapper,
+    AssignmentsFilter, ContractData, ContractError, ContractStateRead, FungibleAllocation,
+    IssuerWrapper, SchemaWrapper,
 };
-use rgbstd::persistence::ContractStateRead;
 use rgbstd::schema::{
     AssignmentDetails, FungibleType, GenesisSchema, GlobalDetails, GlobalStateSchema, Occurrences,
     Schema, TransitionDetails, TransitionSchema,
@@ -197,8 +197,8 @@ impl<S: ContractStateRead> CfaWrapper<S> {
     pub fn allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = FungibleAllocation> + 'c {
-        self.0.fungible_raw(OS_ASSET, filter).unwrap()
+    ) -> impl Iterator<Item = Result<FungibleAllocation, ContractError>> + 'c {
+        self.0.fungible_raw(OS_ASSET, filter)
     }
 }
 

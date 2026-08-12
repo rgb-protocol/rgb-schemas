@@ -26,9 +26,9 @@ use aluvm::isa::Instr;
 use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, DataAllocation, IssuerWrapper, SchemaWrapper,
+    AssignmentsFilter, ContractData, ContractError, ContractStateRead, DataAllocation,
+    FilteredContractState, IssuerWrapper, SchemaWrapper,
 };
-use rgbstd::persistence::{ContractStateRead, MemContract};
 use rgbstd::schema::{
     AssignmentDetails, GenesisSchema, GlobalStateSchema, Occurrences, Schema, TransitionSchema,
 };
@@ -100,7 +100,8 @@ fn uda_lib() -> Lib {
         // Fail if not
         test;
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong unique digital asset script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong unique digital asset script")
 }
 
 fn uda_schema() -> Schema {
@@ -236,8 +237,8 @@ impl<S: ContractStateRead> UdaWrapper<S> {
     pub fn allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = DataAllocation> + 'c {
-        self.0.data_raw(OS_ASSET, filter).unwrap()
+    ) -> impl Iterator<Item = Result<DataAllocation, ContractError>> + 'c {
+        self.0.data_raw(OS_ASSET, filter)
     }
 }
 

@@ -3,8 +3,9 @@ mod common;
 use std::fs;
 
 use amplify::confinement::SmallBlob;
-use amplify::{Bytes, Wrapper};
+use amplify::Wrapper;
 use common::{genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT};
+use rgbstd::bitcoin::hashes::{sha256, Hash};
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{DataAllocation, FilterIncludeAll, IssuerWrapper};
 use rgbstd::invoice::Precision;
@@ -14,7 +15,6 @@ use rgbstd::stl::{
 use rgbstd::{Allocation, ChainNet, TokenIndex, Txid};
 use schemata::dumb::NoResolver;
 use schemata::UniqueDigitalAsset;
-use sha2::{Digest, Sha256};
 
 fn main() {
     let beneficiary = genesis_seal(BENEFICIARY_TXID, 1, 100_001);
@@ -22,14 +22,12 @@ fn main() {
     let spec = AssetSpec::new("TEST", "Test uda", Precision::Indivisible);
 
     let file_bytes = fs::read("LICENSE").unwrap();
-    let mut hasher = Sha256::new();
-    hasher.update(file_bytes);
-    let file_hash = hasher.finalize();
+    let file_hash = sha256::Hash::hash(&file_bytes);
     let terms = ContractTerms {
         text: RicardianContract::default(),
         media: Some(Attachment {
             ty: MediaType::with("text/*"),
-            digest: Bytes::from_byte_array(file_hash),
+            digest: file_hash.to_byte_array().into(),
         }),
     };
 
@@ -83,7 +81,9 @@ fn main() {
     let contract = stock
         .contract_wrapper::<UniqueDigitalAsset>(contract_id)
         .unwrap();
-    let allocations = contract.allocations(&FilterIncludeAll);
+    let allocations = contract
+        .allocations(&FilterIncludeAll)
+        .map(|res| res.expect("state read failure"));
     eprintln!("\nThe issued contract:");
     eprintln!("{}", serde_json::to_string(&contract.spec()).unwrap());
 

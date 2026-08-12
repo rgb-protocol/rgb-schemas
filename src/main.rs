@@ -23,8 +23,7 @@ use std::io;
 use std::io::stdout;
 
 use rgbstd::containers::FileContent;
-use rgbstd::contract::IssuerWrapper;
-use rgbstd::persistence::MemContract;
+use rgbstd::contract::{FilteredContractState, IssuerWrapper};
 use rgbstd::validation::SchemaDefinition;
 use rgbstd::vm::RgbIsa;
 use schemata::{
@@ -96,6 +95,6 @@ fn print_lib(schema_def: &SchemaDefinition) {
     let alu_lib = schema_def.scripts.values().next().unwrap();
     eprintln!("{alu_lib}");
     alu_lib
-        .print_disassemble::<RgbIsa<MemContract>>(stdout())
+        .print_disassemble::<RgbIsa<FilteredContractState>>(stdout())
         .unwrap();
 }

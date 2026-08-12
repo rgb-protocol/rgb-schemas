@@ -62,7 +62,9 @@ fn main() {
     let contract = stock
         .contract_wrapper::<CollectibleFungibleAsset>(contract_id)
         .unwrap();
-    let allocations = contract.allocations(&FilterIncludeAll);
+    let allocations = contract
+        .allocations(&FilterIncludeAll)
+        .map(|res| res.expect("state read failure"));
     eprintln!("\nThe issued contract:");
     eprintln!("{}", contract.name());
 

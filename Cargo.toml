@@ -28,9 +28,9 @@ rgb-ops = { version = "0.11.1", features = ["fs"] }
 rgb-ops = { version = "0.11.1", features = [
     "fs",
     "serde",
+    "sqlite",
 ] }
 serde_json = "1"
-sha2 = "0.11.0"
 
 [features]
 default = []
@@ -50,5 +50,5 @@ rgb-strict-encoding = { git = "https://github.com/rgb-protocol/rgb-strict-encodi
 rgb-ascii-armor = { git = "https://github.com/rgb-protocol/rgb-ascii-armor", rev = "a9bd205" }
 rgb-strict-types = { git = "https://github.com/rgb-protocol/rgb-strict-types", rev = "2f9d542" }
 rgb-aluvm = { git = "https://github.com/rgb-protocol/rgb-aluvm", rev = "53b2809" }
-rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus", rev = "e511258a"}
-rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "569ad60"}
+rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus", rev = "d4871022" }
+rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "b69eafc" }

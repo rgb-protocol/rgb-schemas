@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use rgbstd::containers::FileContent;
 use rgbstd::contract::IssuerWrapper;
-use rgbstd::persistence::Stock;
+use rgbstd::persistence::sqlite::SqliteStock;
 use rgbstd::stl::{ContractTerms, RicardianContract};
 use rgbstd::txout::BlindSeal;
 use rgbstd::validation::SchemaDefinition;
@@ -24,9 +24,9 @@ pub fn default_terms() -> ContractTerms {
 
 /// Reads a schema definition off disk. It carries its own type libraries, so
 /// nothing has to be supplied from code.
-pub fn stock_with_schema_definition<C: IssuerWrapper>(schema_rgb: &str) -> Stock {
+pub fn stock_with_schema_definition<C: IssuerWrapper>(schema_rgb: &str) -> SqliteStock {
     let _ = core::marker::PhantomData::<C>;
-    let mut stock = Stock::in_memory();
+    let mut stock = SqliteStock::in_memory().expect("in-memory sqlite stock");
     let schema_def = SchemaDefinition::load_file(schema_rgb).unwrap();
     stock
         .import_schema_definition(schema_def)

@@ -26,9 +26,9 @@ use aluvm::isa::Instr;
 use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, SchemaWrapper,
+    AssignmentsFilter, ContractData, ContractError, ContractStateRead, FilteredContractState,
+    FungibleAllocation, IssuerWrapper, SchemaWrapper,
 };
-use rgbstd::persistence::{ContractStateRead, MemContract};
 use rgbstd::schema::{
     AssignmentDetails, FungibleType, GenesisSchema, GlobalDetails, GlobalStateSchema, Occurrences,
     OwnedStateSchema, Schema, TransitionSchema,
@@ -75,7 +75,8 @@ pub(crate) fn nia_lib() -> Lib {
         test;
         ret;
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong non-inflatable asset script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong non-inflatable asset script")
 }
 pub(crate) const FN_NIA_GENESIS_OFFSET: u16 = 4 + 3 + 2;
 pub(crate) const FN_NIA_TRANSFER_OFFSET: u16 = 0;
@@ -206,8 +207,8 @@ impl<S: ContractStateRead> NiaWrapper<S> {
     pub fn allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = FungibleAllocation> + 'c {
-        self.0.fungible_raw(OS_ASSET, filter).unwrap()
+    ) -> impl Iterator<Item = Result<FungibleAllocation, ContractError>> + 'c {
+        self.0.fungible_raw(OS_ASSET, filter)
     }
 }
 

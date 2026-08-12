@@ -57,7 +57,9 @@ fn main() {
     let contract = stock
         .contract_wrapper::<NonInflatableAsset>(contract_id)
         .unwrap();
-    let allocations = contract.allocations(&FilterIncludeAll);
+    let allocations = contract
+        .allocations(&FilterIncludeAll)
+        .map(|res| res.expect("state read failure"));
     eprintln!("\nThe issued contract:");
     eprintln!("{}", serde_json::to_string(&contract.spec()).unwrap());
 

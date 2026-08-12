@@ -26,9 +26,9 @@ use aluvm::isa::Instr;
 use aluvm::library::{Lib, LibSite};
 use amplify::confinement::Confined;
 use rgbstd::contract::{
-    AssignmentsFilter, ContractData, FungibleAllocation, IssuerWrapper, SchemaWrapper,
+    AssignmentsFilter, ContractData, ContractError, ContractStateRead, FilteredContractState,
+    FungibleAllocation, IssuerWrapper, SchemaWrapper,
 };
-use rgbstd::persistence::{ContractStateRead, MemContract};
 use rgbstd::schema::{
     AssignmentDetails, FungibleType, GenesisSchema, GlobalDetails, GlobalStateSchema, Occurrences,
     OwnedStateSchema, Schema, TransitionSchema,
@@ -64,7 +64,8 @@ pub(crate) fn pfa_lib_transition() -> Lib {
         test;  // check it didn't fail
         ret;  // return execution flow
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong non-inflatable asset script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong non-inflatable asset script")
 }
 
 pub(crate) fn pfa_lib_genesis() -> Lib {
@@ -80,7 +81,8 @@ pub(crate) fn pfa_lib_genesis() -> Lib {
         test;  // check it didn't fail
         ret;  // return execution flow
     };
-    Lib::assemble::<Instr<RgbIsa<MemContract>>>(&code).expect("wrong non-inflatable asset script")
+    Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
+        .expect("wrong non-inflatable asset script")
 }
 
 fn pfa_standard_types() -> StandardTypes { StandardTypes::with(rgb_contract_stl()) }
@@ -221,8 +223,8 @@ impl<S: ContractStateRead> PfaWrapper<S> {
     pub fn allocations<'c>(
         &'c self,
         filter: impl AssignmentsFilter + 'c,
-    ) -> impl Iterator<Item = FungibleAllocation> + 'c {
-        self.0.fungible_raw(OS_ASSET, filter).unwrap()
+    ) -> impl Iterator<Item = Result<FungibleAllocation, ContractError>> + 'c {
+        self.0.fungible_raw(OS_ASSET, filter)
     }
 }
 
