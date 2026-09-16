@@ -42,8 +42,8 @@ jobs:
           toolchain: nightly
       - name: Documentation
         env:
-          RUSTDOCFLAGS: "-D warnings"
-        run: cargo doc --workspace --all-features
+          RUSTDOCFLAGS: "--cfg docsrs -D warnings"
+        run: cargo doc --workspace --all-features --no-deps
   typos:
     runs-on: ubuntu-latest
     steps:
