@@ -44,6 +44,9 @@ jobs:
         env:
           RUSTDOCFLAGS: "--cfg docsrs -D warnings"
         run: cargo doc --workspace --all-features --no-deps
+      - uses: dtolnay/install@cargo-docs-rs
+      - name: docs.rs build
+        run: cargo docs-rs -p rgb-schemas
   typos:
     runs-on: ubuntu-latest
     steps:
