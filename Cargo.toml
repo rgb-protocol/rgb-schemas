@@ -1,6 +1,6 @@
 [package]
 name = "rgb-schemas"
-version = "0.11.1-rc.11"
+version = "0.11.1"
 description = "Collection of the official RGB smart contract schemata"
 keywords = ["bitcoin", "lightning", "rgb", "smart-contracts", "lnp-bp"]
 categories = ["cryptography::cryptocurrencies"]
@@ -20,12 +20,12 @@ name = "schemata"
 
 [dependencies]
 amplify = "=4.8.1"
-rgb-strict-types = "~1.0.2"
-rgb-aluvm = "0.11.1-rc.4"
-rgb-ops = { version = "0.11.1-rc.11", features = ["fs"] }
+rgb-strict-types = "~1.0.4"
+rgb-aluvm = "0.11.1"
+rgb-ops = { version = "0.11.1", features = ["fs"] }
 
 [dev-dependencies]
-rgb-ops = { version = "0.11.1-rc.11", features = [
+rgb-ops = { version = "0.11.1", features = [
     "fs",
     "serde",
 ] }
