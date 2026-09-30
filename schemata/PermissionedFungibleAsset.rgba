@@ -1,19 +1,19 @@
 -----BEGIN RGB SCHEMA DEFINITION-----
-Id: rgb:sch:YvvvQ4UsHuPQDT3nIQ9mnpsqMbrs5lYZRbyymHVrkY8#famous-process-eagle
+Id: rgb:sch:7eAd3G1EB7_TTvofBstReSW3csCs8RA4utQNGdjn8lU#segment-before-pony
 Name: PermissionedFungibleAsset
 Type-Lib: RGBContract
 Type-Lib: Std
 Type-Lib: Bitcoin
-Alu-Lib: alu:DPSEBjqf-xOj4TEa-gGaYgpl-obVyxVY-Yfm84U4-vTOi7Ow#pepper-divide-info
 Alu-Lib: alu:PhKH0gGv-2qzTq19-qB1FoMX-Ri6tAnB-PEmb7aj-n8gDPqY#hilton-user-credit
-Check-SHA256: 5fb2bd455df6b16214b8f443383fcf93bbe05bd56ff8bba620c2aa6504c715dd
+Alu-Lib: alu:xVZdYngf-pg79DLg-91z~zKl-FuI5dA2-oik7qGw-aYq09MM#numeric-student-gyro
+Check-SHA256: 939ea48af3c82568c25cb1995d3fc3644871f060172b70e42b0f93b7409eba53
 
 000?KWpZt4b8~5LZe?Ufb#7;AVr*qWb8}^M00htn*ZjWY9`LALUza=D8w-q{e*4SCS0#5iEUeSLv>}QC
 0RR95b8uy2(Fa?L$5c2n1xg(vzLX+s=TnOlIwpu5x<(TMczEDkZ1({G00neqa&2?k2Z)SVWn((=JC(Q1
 8jXtb+QHlu3zu?H+0@$e$59-PgaH5m3~6(7b!B8zb#QQOdA<wH0`p5X41*Y!(*>feQhMejN72A5vhxg2
 YMS)OS3rLO000JXbz*B}c>$mg0SF3Vb8}^MPj_x*au6o~1keWo0098e2LS*90NMuu0098L3jqKD00E#6
-0RaF10X`Ck(gCm9tkbJsY6nqhF?3?;&?f}(CU3T*pU49~rT_o|5GMct0iX{70RR61pbr56|Nj9D^n?aF
-pTy|+Oh%v?rXZ$T8&@n<VTb1Pg*d%4qU`Jd00?w)VQzC~WpV+a4+8~M*7+a8%5~50Mvj&o7i+|uUQ1@K
+0RaF10X`Ck(gCm9tkbJsY6nqhF?3?;&?f}(CU3T*pU49~rT_o|5GMct0iX{70RR61pbr56|NjBSR$XFv
+AEpld47felKl3V4ZX=gK+K8m?p|EL+wDiLO00?w)VQzC~WpV+a4+8~M*7+a8%5~50Mvj&o7i+|uUQ1@K
 ?{(Vswa(Hq#u*DzM?ynyZgg^CV{`(7iR(=d3vg7gbV~*3!PlK51EySK%g?1}nECovJTYnmQ*>nIx0x8x
 +1a*vcIuUo9&^-0Caiidlu2>XkLS2Nj<*5_LTPkkZ)t7<2SRCdV{d700{|i8K10Q-T=FR=Q=>S+XYD&<
 oK4xzy{V5hX&1W5Lv;jJZ*_E|f<p7l*U`|S655U7U@unG_-_ux#CFBNXjx241Z7qPRCsA*=xRXCTqXIv
@@ -178,8 +178,8 @@ a%pgM0XTI8u}gdoMr}u)7e{?0bR>WH17z$yORD!eAooFZYY1~?adl;GV`TvW8Eu6r$oASqO%+a!oQ%Dm
 1$JR<b!7pU_16YMt|~K<B|E529nQp)<G()Baj}PUhBZ#ih=OYjb7OL8aCA_0Vryl20lxem{AQ&Y{bW*V
 IunOL=kX9N3%>t4!A4H=_ds@ZTm@8kR%LPp0RR9*1XOrwWCZ~L2LJ#-AOHkbZ*_D90RR952UlryZe??G
 1pxpE0mO1^kB=zPdcl{-9gYp5n_@(q=Fnta{>SNfJhg}MqW}N^000000RR90{{R3000&r4Zfto_YXt!S
-2LJ#-AOHdY4D^HsI-kVo_)JEi8KxknS{qj^Rbhwb^MyFQGotM50|P-!RR}^*L`g?QQ&a;|M?xC_3jhEB
-(4Y?i3jhHC3jzWF$-WB!3jhWH(-3e6000yK0000L06r3j(gCm9tkbJsY6nqhF?3?;&?f}(CU3T*pU49~
-rUL^(OjQU%P((>bMN?D*Qb$4<01E&B01F5K01E*E0La=00XZ-L(V!0j2Lu2C00000
+2LJ#-AOHdYJ`#u00k7Ju)2m-<2T^D-bYkkzCj{{(Z?>bK$OAs60|P-!RR}^*L`g?QQ&a;|M?x3?3jhEB
+3kU%K3jqQE$l3=1IWPdxpbr5D1ONd50002RR$XFvAEpld47felKl3V4ZX=gK+K8m?p|EL+wDiLR13^qx
+2trUqNk>IfR0C2+LL2}K0002cpbr5H0096C0s;WZz6$^g00scl009RF000yK0000L00
 
 -----END RGB SCHEMA DEFINITION-----
