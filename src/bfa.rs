@@ -40,7 +40,7 @@ use rgbstd::schema::{
 };
 use rgbstd::stl::{
     rgb_bridge_stl, rgb_burn_stl, AssetSpec, BridgeLocation, BurnReason, ContractTerms,
-    RejectListUrl, StandardTypes,
+    RejectListLocation, StandardTypes,
 };
 use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::RgbIsa;
@@ -53,13 +53,13 @@ use crate::{
     ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_HIDDEN_BURN, ERRNO_ISSUED_MISMATCH,
     ERRNO_MISSING_INPUT, ERRNO_NON_EQUAL_IN_OUT, GS_BRIDGE_LOCATION, GS_BURNED_ASSET,
     GS_BURN_REASON, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_NOMINAL,
-    GS_REJECT_LIST_URL, GS_TERMS, MS_AFTER_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK,
+    GS_REJECT_LIST, GS_TERMS, MS_AFTER_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK,
     TS_MINT, TS_TRANSFER,
 };
 
 pub const BFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0x4a, 0xb2, 0x1c, 0x87, 0x2b, 0x75, 0x62, 0x4c, 0x36, 0x52, 0xc4, 0xf4, 0x5c, 0x58, 0x26, 0x9b,
-    0x1e, 0xd4, 0x8c, 0x5e, 0xcc, 0x02, 0x16, 0x80, 0x6a, 0x70, 0xac, 0x5b, 0x36, 0xc2, 0x8c, 0x63,
+    0x47, 0x29, 0x79, 0x79, 0x06, 0x77, 0x20, 0x7a, 0xd4, 0xd3, 0x97, 0xb7, 0x01, 0x67, 0x50, 0x64,
+    0x94, 0x78, 0x14, 0x1e, 0x46, 0xbf, 0x16, 0x4f, 0xcb, 0xde, 0x9c, 0xc2, 0x12, 0x62, 0x02, 0x97,
 ]);
 
 pub(crate) fn bfa_lib_transfer() -> Lib {
@@ -225,9 +225,9 @@ fn bfa_schema() -> Schema {
                 global_state_schema: GlobalStateSchema::many(types.get("RGBContract.Amount")),
                 name: fname!("burnedAsset"),
             },
-            GS_REJECT_LIST_URL => GlobalDetails {
-                global_state_schema: GlobalStateSchema::once(types.get("RGBContract.RejectListUrl")),
-                name: fname!("rejectListUrl"),
+            GS_REJECT_LIST => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBBridge.RejectListLocation")),
+                name: fname!("rejectList"),
             },
             GS_LINKED_FROM_CONTRACT => GlobalDetails {
                 global_state_schema: GlobalStateSchema::once(types.get("RGBCommit.ContractId")),
@@ -270,7 +270,7 @@ fn bfa_schema() -> Schema {
             globals: tiny_bmap! {
                 GS_NOMINAL => Occurrences::Once,
                 GS_TERMS => Occurrences::Once,
-                GS_REJECT_LIST_URL => Occurrences::NoneOrOnce,
+                GS_REJECT_LIST => Occurrences::NoneOrOnce,
                 GS_LINKED_FROM_CONTRACT => Occurrences::NoneOrOnce,
                 GS_BRIDGE_LOCATION => Occurrences::Once,
             },
@@ -438,11 +438,11 @@ impl<S: ContractStateRead> BfaWrapper<S> {
         ContractTerms::from_strict_val_unchecked(strict_val)
     }
 
-    pub fn reject_list_url(&self) -> Option<RejectListUrl> {
+    pub fn reject_list(&self) -> Option<RejectListLocation> {
         self.0
-            .global("rejectListUrl")
+            .global("rejectList")
             .next()
-            .map(|strict_val| RejectListUrl::from_strict_val_unchecked(&strict_val))
+            .map(|strict_val| RejectListLocation::from_strict_val_unchecked(&strict_val))
     }
 
     pub fn total_issued_supply(&self) -> Amount {

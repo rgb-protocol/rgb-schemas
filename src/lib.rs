@@ -61,6 +61,7 @@ pub const GS_PUBKEY: GlobalStateType = GlobalStateType::with(3006);
 pub const GS_BRIDGED_SUPPLY: GlobalStateType = GlobalStateType::with(3007);
 pub const GS_BRIDGE_LOCATION: GlobalStateType = GlobalStateType::with(3008);
 pub const GS_BURN_REASON: GlobalStateType = GlobalStateType::with(3009);
+pub const GS_REJECT_LIST: GlobalStateType = GlobalStateType::with(3010);
 
 pub const OS_ASSET: AssignmentType = AssignmentType::with(4000);
 pub const OS_INFLATION: AssignmentType = AssignmentType::with(4010);

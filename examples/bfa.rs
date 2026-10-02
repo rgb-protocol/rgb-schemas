@@ -1,13 +1,16 @@
 mod common;
 
-use amplify::{s, tiny_s};
+use std::str::FromStr;
+
 use common::{
     default_terms, genesis_seal, stock_with_schema_definition, BENEFICIARY_TXID, CREATED_AT,
 };
 use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{FilterIncludeAll, IssuerWrapper, RightsAllocation};
 use rgbstd::invoice::Precision;
-use rgbstd::stl::{AssetSpec, BridgeLocation, RejectListUrl};
+use rgbstd::stl::{
+    AssetSpec, BridgeLocation, EvmAddress, EvmContract, RejectListLocation, RejectListUrl,
+};
 use rgbstd::{ChainNet, Txid};
 use schemata::dumb::NoResolver;
 use schemata::BridgedFungibleAsset;
@@ -20,13 +23,14 @@ fn main() {
 
     let terms = default_terms();
 
-    let reject_list_url = RejectListUrl::from("example.xyz/reject");
+    let reject_list = RejectListLocation::Url(RejectListUrl::from("example.xyz/reject"));
 
     // Address of the token contract on the bridged (external) chain.
-    let bridge_location = BridgeLocation::Evm {
+    let bridge_location = BridgeLocation::Evm(EvmContract {
         chain_id: 1,
-        address: tiny_s!("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"),
-    };
+        address: EvmAddress::from_str("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
+            .expect("invalid EVM address"),
+    });
 
     let mut stock =
         stock_with_schema_definition::<BridgedFungibleAsset>("schemata/BridgedFungibleAsset.rgb");
@@ -42,8 +46,8 @@ fn main() {
         .expect("invalid spec")
         .add_global_state("terms", terms)
         .expect("invalid contract terms")
-        .add_global_state("rejectListUrl", reject_list_url)
-        .expect("invalid reject list url")
+        .add_global_state("rejectList", reject_list)
+        .expect("invalid reject list")
         .add_global_state("bridgeLocation", bridge_location)
         .expect("invalid bridge location")
         // BFA mints no assets at genesis: `assetOwner` is only assigned by a `mint`
