@@ -22,6 +22,8 @@
 //! - The mint right is similar to IFA's inflation rights, but it has no amount limit
 //! - In the "mint" transition, the `issuedSupply` global state and the `afterBlock` metadata are
 //!   pushed to the context's external anchors list to be checked before validation is finalized
+//! - The "mint" transition consumes its mint right, the "propagate" transition allows to multiply
+//!   and distribute allocations of the mint right
 //!
 //! (!) Not safe to use in a production environment!
 
@@ -50,16 +52,15 @@ use rgbstd::{
 use strict_types::encoding::StrictDeserialize;
 
 use crate::{
-    ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_HIDDEN_BURN, ERRNO_ISSUED_MISMATCH,
-    ERRNO_MISSING_INPUT, ERRNO_NON_EQUAL_IN_OUT, GS_BRIDGE_LOCATION, GS_BURNED_ASSET,
-    GS_BURN_REASON, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_NOMINAL,
-    GS_REJECT_LIST, GS_TERMS, MS_AFTER_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK,
-    TS_MINT, TS_TRANSFER,
+    ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_ISSUED_MISMATCH, ERRNO_NON_EQUAL_IN_OUT,
+    GS_BRIDGE_LOCATION, GS_BURNED_ASSET, GS_BURN_REASON, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT,
+    GS_LINKED_TO_CONTRACT, GS_NOMINAL, GS_REJECT_LIST, GS_TERMS, MS_AFTER_BLOCK, OS_ASSET, OS_LINK,
+    OS_MINT, TS_BURN, TS_LINK, TS_MINT, TS_PROPAGATE, TS_TRANSFER,
 };
 
 pub const BFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0x47, 0x29, 0x79, 0x79, 0x06, 0x77, 0x20, 0x7a, 0xd4, 0xd3, 0x97, 0xb7, 0x01, 0x67, 0x50, 0x64,
-    0x94, 0x78, 0x14, 0x1e, 0x46, 0xbf, 0x16, 0x4f, 0xcb, 0xde, 0x9c, 0xc2, 0x12, 0x62, 0x02, 0x97,
+    0xb1, 0x4d, 0x0e, 0x0b, 0x94, 0x0c, 0x61, 0xca, 0xee, 0xaa, 0x20, 0x03, 0xb4, 0xb2, 0x92, 0x9c,
+    0x52, 0x54, 0x6c, 0xb7, 0xab, 0xf2, 0x10, 0xe2, 0x5c, 0xe3, 0x07, 0x33, 0x64, 0x18, 0x13, 0xf5,
 ]);
 
 pub(crate) fn bfa_lib_transfer() -> Lib {
@@ -74,26 +75,6 @@ pub(crate) fn bfa_lib_transfer() -> Lib {
         cns     OS_LINK,a16[1];  // count link right outputs
         eq.n    a16[0],a16[1];
         test;
-
-        // Mint rights validation
-        cnp     OS_MINT,a16[0];  // count input mint rights
-        cns     OS_MINT,a16[1];  // count output mint rights
-        // Check if input count is 0
-        put     a16[2],0;  // store 0 in a16[2]
-        eq.n    a16[0],a16[2];  // check if input_count == 0
-        jif     48;  // jump to 0x30 if input_count == 0
-        // Input count > 0, check that output count >= input count
-        put     a8[0],ERRNO_HIDDEN_BURN;  // set errno
-        lt.u    a16[1],a16[0];  // output_count < input_count
-        inv     st0;  // output_count >= input_count
-        test;  // fail if output_count < input_count
-        ret;  // return execution flow
-        // 0x30: Input count is 0, output count must also be 0
-        put     a8[0],ERRNO_MISSING_INPUT;  // set errno
-        eq.n    a16[1],a16[0];  // check if output_count == input_count
-        test;  // fail if output_count != input_count (=0)
-
-        ret;
     };
     Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
         .expect("wrong BFA transfer validation script")
@@ -253,11 +234,9 @@ fn bfa_schema() -> Schema {
                 default_transition: TS_TRANSFER,
             },
             OS_MINT => AssignmentDetails {
-                // Void (no amount): the right to mint is signalled by mere possession,
-                // not by a numeric allowance.
                 owned_state_schema: OwnedStateSchema::Declarative,
                 name: fname!("mintRight"),
-                default_transition: TS_TRANSFER,
+                default_transition: TS_PROPAGATE,
             },
             OS_LINK => AssignmentDetails {
                 owned_state_schema: OwnedStateSchema::Declarative,
@@ -288,17 +267,29 @@ fn bfa_schema() -> Schema {
                     globals: none!(),
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
-                        OS_MINT => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
                     assignments: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
-                        OS_MINT => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
                     validator: Some(LibSite::with(0, bfa_lib_transfer().id())),
                 },
                 name: fname!("transfer"),
+            },
+            TS_PROPAGATE => TransitionDetails {
+                transition_schema: TransitionSchema {
+                    metadata: none!(),
+                    globals: none!(),
+                    inputs: tiny_bmap! {
+                        OS_MINT => Occurrences::Once,
+                    },
+                    assignments: tiny_bmap! {
+                        OS_MINT => Occurrences::OnceOrMore,
+                    },
+                    validator: None,
+                },
+                name: fname!("propagate"),
             },
             TS_MINT => TransitionDetails {
                 transition_schema: TransitionSchema {
@@ -311,7 +302,6 @@ fn bfa_schema() -> Schema {
                     },
                     assignments: tiny_bmap! {
                         OS_ASSET => Occurrences::OnceOrMore,
-                        OS_MINT => Occurrences::NoneOrOnce,
                     },
                     validator: Some(LibSite::with(0, bfa_lib_mint().id())),
                 },

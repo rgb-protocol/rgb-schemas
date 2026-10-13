@@ -73,14 +73,13 @@ pub const TS_BURN: TransitionType = TransitionType::with(8010);
 pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
 pub const TS_LINK: TransitionType = TransitionType::with(8012);
 pub const TS_MINT: TransitionType = TransitionType::with(8013);
+pub const TS_PROPAGATE: TransitionType = TransitionType::with(8014);
 
 pub const MS_ALLOWED_INFLATION: MetaType = MetaType::with(1000);
 pub const MS_AFTER_BLOCK: MetaType = MetaType::with(1003);
 
 pub const ERRNO_NON_EQUAL_IN_OUT: u8 = 0;
 pub const ERRNO_ISSUED_MISMATCH: u8 = 1;
-pub const ERRNO_MISSING_INPUT: u8 = 2;
-pub const ERRNO_HIDDEN_BURN: u8 = 3;
 pub const ERRNO_NON_FRACTIONAL: u8 = 10;
 pub const ERRNO_MISSING_PUBKEY: u8 = 20;
 pub const ERRNO_INVALID_SIGNATURE: u8 = 21;
