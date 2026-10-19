@@ -44,3 +44,8 @@ log = [
 fs = [
     "rgb-ops/fs",
 ]
+
+[patch.crates-io]
+rgb-strict-encoding = { git = "https://github.com/rgb-protocol/rgb-strict-encoding", rev = "e12b9944" }
+rgb-strict-types = { git = "https://github.com/rgb-protocol/rgb-strict-types", rev = "8714cdc" }
+rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "a08781d" }

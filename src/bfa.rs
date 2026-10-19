@@ -25,6 +25,11 @@
 //! - The "mint" transition consumes its mint right, the "propagate" transition allows to multiply
 //!   and distribute allocations of the mint right
 //!
+//! Also, instead of an `AssetSpec`, the asset nominals are separate global states: the ticker is a
+//! [`UnicodeTicker`], so it is not restricted to ASCII alphanumerics like [`Ticker`].
+//!
+//! [`Ticker`]: rgbstd::stl::Ticker
+//!
 //! (!) Not safe to use in a production environment!
 
 use aluvm::isa::Instr;
@@ -41,26 +46,28 @@ use rgbstd::schema::{
     OwnedStateSchema, Schema, TransitionSchema,
 };
 use rgbstd::stl::{
-    rgb_bridge_stl, rgb_burn_stl, AssetSpec, BridgeLocation, BurnReason, ContractTerms,
-    RejectListLocation, StandardTypes,
+    rgb_bridge_stl, rgb_burn_stl, BridgeLocation, BurnReason, ContractTerms, Details, Name,
+    RejectListLocation, StandardTypes, UnicodeTicker,
 };
 use rgbstd::validation::{Scripts, TypeLibs};
 use rgbstd::vm::RgbIsa;
 use rgbstd::{
-    rgbasm, Amount, ContractId, Genesis, GlobalDetails, MetaDetails, SchemaId, TransitionDetails,
+    rgbasm, Amount, ContractId, Genesis, GlobalDetails, MetaDetails, Precision, SchemaId,
+    TransitionDetails,
 };
 use strict_types::encoding::StrictDeserialize;
 
 use crate::{
     ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_ISSUED_MISMATCH, ERRNO_NON_EQUAL_IN_OUT,
-    GS_BRIDGE_LOCATION, GS_BURNED_ASSET, GS_BURN_REASON, GS_ISSUED_SUPPLY, GS_LINKED_FROM_CONTRACT,
-    GS_LINKED_TO_CONTRACT, GS_NOMINAL, GS_REJECT_LIST, GS_TERMS, MS_AFTER_BLOCK, OS_ASSET, OS_LINK,
-    OS_MINT, TS_BURN, TS_LINK, TS_MINT, TS_PROPAGATE, TS_TRANSFER,
+    GS_BRIDGE_LOCATION, GS_BURNED_ASSET, GS_BURN_REASON, GS_DETAILS, GS_ISSUED_SUPPLY,
+    GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_NAME, GS_PRECISION, GS_REJECT_LIST,
+    GS_TERMS, GS_TICKER, MS_AFTER_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK, TS_MINT,
+    TS_PROPAGATE, TS_TRANSFER,
 };
 
 pub const BFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0xb1, 0x4d, 0x0e, 0x0b, 0x94, 0x0c, 0x61, 0xca, 0xee, 0xaa, 0x20, 0x03, 0xb4, 0xb2, 0x92, 0x9c,
-    0x52, 0x54, 0x6c, 0xb7, 0xab, 0xf2, 0x10, 0xe2, 0x5c, 0xe3, 0x07, 0x33, 0x64, 0x18, 0x13, 0xf5,
+    0xa4, 0x97, 0xf9, 0x17, 0xf6, 0x93, 0xa0, 0x37, 0x77, 0xeb, 0x35, 0xef, 0x47, 0xd3, 0xc5, 0x06,
+    0x54, 0x9b, 0xc4, 0xc1, 0x86, 0x5e, 0xd7, 0xc7, 0x6f, 0x86, 0xbc, 0x3c, 0xa0, 0xb1, 0x86, 0xd4,
 ]);
 
 pub(crate) fn bfa_lib_transfer() -> Lib {
@@ -190,9 +197,21 @@ fn bfa_schema() -> Schema {
             },
         },
         global_types: tiny_bmap! {
-            GS_NOMINAL => GlobalDetails {
-                global_state_schema: GlobalStateSchema::once(types.get("RGBContract.AssetSpec")),
-                name: fname!("spec"),
+            GS_TICKER => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBBridge.UnicodeTicker")),
+                name: fname!("ticker"),
+            },
+            GS_NAME => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBContract.Name")),
+                name: fname!("name"),
+            },
+            GS_DETAILS => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBContract.Details")),
+                name: fname!("details"),
+            },
+            GS_PRECISION => GlobalDetails {
+                global_state_schema: GlobalStateSchema::once(types.get("RGBContract.Precision")),
+                name: fname!("precision"),
             },
             GS_TERMS => GlobalDetails {
                 global_state_schema: GlobalStateSchema::once(types.get("RGBContract.ContractTerms")),
@@ -247,7 +266,10 @@ fn bfa_schema() -> Schema {
         genesis: GenesisSchema {
             metadata: none!(),
             globals: tiny_bmap! {
-                GS_NOMINAL => Occurrences::Once,
+                GS_TICKER => Occurrences::Once,
+                GS_NAME => Occurrences::Once,
+                GS_DETAILS => Occurrences::NoneOrOnce,
+                GS_PRECISION => Occurrences::Once,
                 GS_TERMS => Occurrences::Once,
                 GS_REJECT_LIST => Occurrences::NoneOrOnce,
                 GS_LINKED_FROM_CONTRACT => Occurrences::NoneOrOnce,
@@ -410,13 +432,38 @@ impl<S: ContractStateRead> SchemaWrapper<S> for BfaWrapper<S> {
 }
 
 impl<S: ContractStateRead> BfaWrapper<S> {
-    pub fn spec(&self) -> AssetSpec {
+    pub fn ticker(&self) -> UnicodeTicker {
         let strict_val = &self
             .0
-            .global("spec")
+            .global("ticker")
             .next()
-            .expect("BFA requires global state `spec` to have at least one item");
-        AssetSpec::from_strict_val_unchecked(strict_val)
+            .expect("BFA requires global state `ticker` to have at least one item");
+        UnicodeTicker::from_strict_val_unchecked(strict_val)
+    }
+
+    pub fn name(&self) -> Name {
+        let strict_val = &self
+            .0
+            .global("name")
+            .next()
+            .expect("BFA requires global state `name` to have at least one item");
+        Name::from_strict_val_unchecked(strict_val)
+    }
+
+    pub fn details(&self) -> Option<Details> {
+        self.0
+            .global("details")
+            .next()
+            .map(|strict_val| Details::from_strict_val_unchecked(&strict_val))
+    }
+
+    pub fn precision(&self) -> Precision {
+        let strict_val = &self
+            .0
+            .global("precision")
+            .next()
+            .expect("BFA requires global state `precision` to have at least one item");
+        Precision::from_strict_val_unchecked(strict_val)
     }
 
     pub fn contract_terms(&self) -> ContractTerms {

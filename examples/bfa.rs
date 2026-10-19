@@ -9,7 +9,7 @@ use rgbstd::containers::{ConsignmentExt, FileContent};
 use rgbstd::contract::{FilterIncludeAll, IssuerWrapper, RightsAllocation};
 use rgbstd::invoice::Precision;
 use rgbstd::stl::{
-    AssetSpec, BridgeLocation, EvmAddress, EvmContract, RejectListLocation, RejectListUrl,
+    BridgeLocation, EvmAddress, EvmContract, Name, RejectListLocation, RejectListUrl, UnicodeTicker,
 };
 use rgbstd::{ChainNet, Txid};
 use schemata::dumb::NoResolver;
@@ -19,7 +19,8 @@ fn main() {
     let beneficiary_1 = genesis_seal(BENEFICIARY_TXID, 1, 100_001);
     let beneficiary_2 = genesis_seal(BENEFICIARY_TXID, 2, 100_002);
 
-    let spec = AssetSpec::new("TEST", "Test asset", Precision::CentiMicro);
+    let ticker = UnicodeTicker::from("₮EST");
+    let name = Name::from("Test asset");
 
     let terms = default_terms();
 
@@ -42,8 +43,12 @@ fn main() {
             ChainNet::BitcoinTestnet4,
         )
         .unwrap()
-        .add_global_state("spec", spec)
-        .expect("invalid spec")
+        .add_global_state("ticker", ticker)
+        .expect("invalid ticker")
+        .add_global_state("name", name)
+        .expect("invalid name")
+        .add_global_state("precision", Precision::CentiMicro)
+        .expect("invalid precision")
         .add_global_state("terms", terms)
         .expect("invalid contract terms")
         .add_global_state("rejectList", reject_list)
@@ -76,7 +81,9 @@ fn main() {
         .contract_wrapper::<BridgedFungibleAsset>(contract_id)
         .unwrap();
     eprintln!("\nThe issued contract:");
-    eprintln!("{}", serde_json::to_string(&contract.spec()).unwrap());
+    eprintln!("ticker={}", contract.ticker());
+    eprintln!("name={}", contract.name());
+    eprintln!("precision={:?}", contract.precision());
     eprintln!("bridgeLocation={:?}", contract.bridge_location());
 
     let mint_rights = contract
