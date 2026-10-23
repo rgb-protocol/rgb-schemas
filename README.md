@@ -17,7 +17,7 @@ Lightning. To learn more about RGB please check [RGB website][Site].
 
 ## Catalog
 
-This repository provides the following RGB schemata:
+This repository provides the following RGB schemas:
 
 * __Non-inflatable assets (NIA)__.
   This is the simplest form of a fungible asset/token, which doesn't provide
@@ -43,7 +43,7 @@ This repository provides the following RGB schemata:
 * __Bridged fungible assets (BFA)__.
   **Not production-ready**
   This is a fungible asset that is bridged from a different chain through external anchors.
-  It supports *inflate*, *burn* and *link* transitions.
+  It supports *mint*, *burn*, *link* and *propagate* transitions.
 
 ## License
 
