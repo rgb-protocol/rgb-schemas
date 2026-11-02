@@ -75,9 +75,11 @@ pub const TS_TRANSFER: TransitionType = TransitionType::with(10000);
 pub const TS_LINK: TransitionType = TransitionType::with(8012);
 pub const TS_MINT: TransitionType = TransitionType::with(8013);
 pub const TS_PROPAGATE: TransitionType = TransitionType::with(8014);
+pub const TS_TRANSFER_INFLATION: TransitionType = TransitionType::with(8015);
+pub const TS_TRANSFER_LINK: TransitionType = TransitionType::with(8016);
 
 pub const MS_ALLOWED_INFLATION: MetaType = MetaType::with(1000);
-pub const MS_AFTER_BLOCK: MetaType = MetaType::with(1003);
+pub const MS_BEFORE_BLOCK: MetaType = MetaType::with(1003);
 
 pub const ERRNO_NON_EQUAL_IN_OUT: u8 = 0;
 pub const ERRNO_ISSUED_MISMATCH: u8 = 1;

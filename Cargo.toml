@@ -48,4 +48,5 @@ fs = [
 [patch.crates-io]
 rgb-strict-encoding = { git = "https://github.com/rgb-protocol/rgb-strict-encoding", rev = "e12b9944" }
 rgb-strict-types = { git = "https://github.com/rgb-protocol/rgb-strict-types", rev = "8714cdc" }
-rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "a08781d" }
+rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus", rev = "6a95a911" }
+rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "6c02dc72" }

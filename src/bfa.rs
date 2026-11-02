@@ -20,7 +20,7 @@
 //!
 //! Similar to IFA but with two key differences:
 //! - The mint right is similar to IFA's inflation rights, but it has no amount limit
-//! - In the "mint" transition, the `issuedSupply` global state and the `afterBlock` metadata are
+//! - In the "mint" transition, the `issuedSupply` global state and the `beforeBlock` metadata are
 //!   pushed to the context's external anchors list to be checked before validation is finalized
 //! - The "mint" transition consumes its mint right, the "propagate" transition allows to multiply
 //!   and distribute allocations of the mint right
@@ -61,13 +61,13 @@ use crate::{
     ERRNO_BURN_MISMATCH, ERRNO_BURN_ZERO, ERRNO_ISSUED_MISMATCH, ERRNO_NON_EQUAL_IN_OUT,
     GS_BRIDGE_LOCATION, GS_BURNED_ASSET, GS_BURN_REASON, GS_DETAILS, GS_ISSUED_SUPPLY,
     GS_LINKED_FROM_CONTRACT, GS_LINKED_TO_CONTRACT, GS_NAME, GS_PRECISION, GS_REJECT_LIST,
-    GS_TERMS, GS_TICKER, MS_AFTER_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK, TS_MINT,
-    TS_PROPAGATE, TS_TRANSFER,
+    GS_TERMS, GS_TICKER, MS_BEFORE_BLOCK, OS_ASSET, OS_LINK, OS_MINT, TS_BURN, TS_LINK, TS_MINT,
+    TS_PROPAGATE, TS_TRANSFER, TS_TRANSFER_LINK,
 };
 
 pub const BFA_SCHEMA_ID: SchemaId = SchemaId::from_array([
-    0xa4, 0x97, 0xf9, 0x17, 0xf6, 0x93, 0xa0, 0x37, 0x77, 0xeb, 0x35, 0xef, 0x47, 0xd3, 0xc5, 0x06,
-    0x54, 0x9b, 0xc4, 0xc1, 0x86, 0x5e, 0xd7, 0xc7, 0x6f, 0x86, 0xbc, 0x3c, 0xa0, 0xb1, 0x86, 0xd4,
+    0xdc, 0x8d, 0x31, 0x65, 0x51, 0x10, 0x9d, 0x0c, 0x58, 0x56, 0x4e, 0xef, 0x0e, 0x78, 0x79, 0xb8,
+    0xdb, 0x50, 0xc9, 0x47, 0xec, 0x99, 0x38, 0x70, 0xe9, 0xd5, 0xfd, 0x9f, 0xe1, 0xaf, 0x6f, 0x9a,
 ]);
 
 pub(crate) fn bfa_lib_transfer() -> Lib {
@@ -75,12 +75,6 @@ pub(crate) fn bfa_lib_transfer() -> Lib {
         // Check asset sum is preserved
         put     a8[0],ERRNO_NON_EQUAL_IN_OUT;  // set errno
         svs     OS_ASSET;  // verify sum: inputs == outputs
-        test;
-
-        // Count-based check for link rights
-        cnp     OS_LINK,a16[0];  // count link right inputs
-        cns     OS_LINK,a16[1];  // count link right outputs
-        eq.n    a16[0],a16[1];
         test;
     };
     Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
@@ -97,10 +91,10 @@ pub(crate) fn bfa_lib_mint() -> Lib {
         extr    s16[0],a64[0],a16[0]; // extract u64 into a64[0]
         sas     OS_ASSET;  // check sum of asset allocations in output equals issued_supply
         test;
-        ldm     MS_AFTER_BLOCK,s16[1]; // load afterBlock metadata into s16[1]
+        ldm     MS_BEFORE_BLOCK,s16[1]; // load beforeBlock metadata into s16[1]
         extr    s16[1],a64[1],a16[0]; // extract u64 into a64[1]
         test;
-        pma     a64[0],a64[1]; // record external anchor: amount in a64[0], afterBlock in a64[1]
+        pma     a64[0],a64[1]; // record external anchor: amount in a64[0], beforeBlock in a64[1]
         test;
         ret;
     };
@@ -109,74 +103,45 @@ pub(crate) fn bfa_lib_mint() -> Lib {
 }
 
 pub(crate) fn bfa_lib_burn() -> Lib {
-    const BEFORE_LOOP: u16 = 16;
-    const LOOP: u16 = 20;
-    const LOAD_GLOBAL: u16 = 34;
-    const FINAL_CHECKS: u16 = 24;
+    // Burn transitions have no assignments: they burn whole allocations, without change
+    const LOAD_GLOBAL: u16 = 42;
+    const CHECK: u16 = 4;
 
-    const LOOP_STRT: u16 = BEFORE_LOOP;
-    const LOOP_EXIT: u16 = LOOP_STRT + LOOP;
-    const LDGL_EXIT: u16 = LOOP_EXIT + LOAD_GLOBAL;
+    const CHECK_START: u16 = LOAD_GLOBAL;
 
     #[allow(clippy::diverging_sub_expression)]
     let code: Vec<Instr<RgbIsa<FilteredContractState>>> = rgbasm! {
-        // VALIDATE OS_ASSET BURN
-        // 1. BEFORE_LOOP: load sum of OS_ASSET outputs into a64[0]
-        put     a8[0],ERRNO_BURN_MISMATCH;  // set errno
-        put     a16[0],0; // index
-        put     a64[0],0; // accumulator
-        cns     OS_ASSET,a16[1]; // count OS_ASSET assignments
-        // 2. LOOP: loop through all OS_ASSET assignments and sum their values into a64[0]
-        // *LOOP_STRT* jump destination
-        eq.n    a16[0],a16[1];
-        jif     LOOP_EXIT; // if we cycled all assignments, end loop
-        ldf     OS_ASSET,a16[0],a64[1]; // load assignment at the current index
-        add.uc  a64[1],a64[0]; // add it to the accumulator
-        test;
-        inc     a16[0]; // increment index
-        jmp     LOOP_STRT; // go to the next iteration
-        // *LOOP_EXIT* jump destination
-
-        // 3. LOAD_GLOBAL: load the burned amount into a64[1], defaulting to 0 when absent.
+        // 1. LOAD_GLOBAL: load the burned amount into a64[0], defaulting to 0 when absent.
         // GS_BURNED_ASSET is optional since the transition can burn other assignment types
-        put     a64[1],0;
+        put     a8[0],ERRNO_BURN_ZERO;  // set errno
+        put     a64[0],0;
         cng     GS_BURNED_ASSET,a8[1];  // check if there is a GS_BURNED_ASSET entry
         ifz     a8[1];
-        jif     LDGL_EXIT;  // absent -> burned amount is 0
+        jif     CHECK_START;  // absent -> burned amount is 0
 
         inv     st0; // restore st0 after ifz check
+        put     a8[0],ERRNO_BURN_MISMATCH;  // set errno
         put     a8[1],0;  // index of the global state item to read
         ldg     GS_BURNED_ASSET,a8[1],s16[0];
         put     a16[0],0;
 
-        extr    s16[0],a64[1],a16[0];
+        extr    s16[0],a64[0],a16[0];
         test;
-        ifz     a64[1]; // must be nonzero if present
+        ifz     a64[0]; // must be nonzero if present
         inv     st0;
         test;   // fail if GS_BURNED_ASSET is present and equal to 0
-        // *LDGL_EXIT* jump destination
+        // *CHECK_START* jump destination
 
-        // 4. FINAL_CHECKS:
-        // - sum of inputs must equal burned amount plus sum of outputs
-        add.uc  a64[1],a64[0];
-        test;
+        // 2. CHECK: whole allocations are burned, so the sum of inputs must equal the burned
+        // amount.
         sps     OS_ASSET;
         test;
-        // - a nonzero amount must be burned (pure transfer is forbidden)
-        put     a8[0],ERRNO_BURN_ZERO;  // set errno
-        ifz     a64[1];
-        st.s    a8[1]; // burned_amount == 0
-        ifz     a64[0]; // os_asset input == 0
-        inv     st0;
-        st.n    a8[1]; // burned_amount == 0 AND os_asset input > 0
-        ifz     a8[1];
-        test; // fail if burned_amount == 0 AND os_asset input > 0
     };
 
     let aluvm_script = Lib::assemble::<Instr<RgbIsa<FilteredContractState>>>(&code)
         .expect("wrong burn validation script");
     let script_length = aluvm_script.code_segment().len() as u16;
-    assert_eq!(script_length, LDGL_EXIT + FINAL_CHECKS);
+    assert_eq!(script_length, LOAD_GLOBAL + CHECK);
     aluvm_script
 }
 
@@ -191,9 +156,9 @@ fn bfa_schema() -> Schema {
         ffv: zero!(),
         name: tn!("BridgedFungibleAsset"),
         meta_types: tiny_bmap! {
-            MS_AFTER_BLOCK => MetaDetails {
+            MS_BEFORE_BLOCK => MetaDetails {
                 sem_id: types.get("RGBBridge.BlockNumber"),
-                name: fname!("afterBlock"),
+                name: fname!("beforeBlock"),
             },
         },
         global_types: tiny_bmap! {
@@ -260,7 +225,7 @@ fn bfa_schema() -> Schema {
             OS_LINK => AssignmentDetails {
                 owned_state_schema: OwnedStateSchema::Declarative,
                 name: fname!("linkRight"),
-                default_transition: TS_TRANSFER,
+                default_transition: TS_TRANSFER_LINK,
             }
         },
         genesis: GenesisSchema {
@@ -289,15 +254,27 @@ fn bfa_schema() -> Schema {
                     globals: none!(),
                     inputs: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
-                        OS_LINK => Occurrences::NoneOrOnce,
                     },
                     assignments: tiny_bmap! {
                         OS_ASSET => Occurrences::NoneOrMore,
-                        OS_LINK => Occurrences::NoneOrOnce,
                     },
                     validator: Some(LibSite::with(0, bfa_lib_transfer().id())),
                 },
                 name: fname!("transfer"),
+            },
+            TS_TRANSFER_LINK => TransitionDetails {
+                transition_schema: TransitionSchema {
+                    metadata: none!(),
+                    globals: none!(),
+                    inputs: tiny_bmap! {
+                        OS_LINK => Occurrences::Once,
+                    },
+                    assignments: tiny_bmap! {
+                        OS_LINK => Occurrences::Once,
+                    },
+                    validator: None,
+                },
+                name: fname!("transferLink"),
             },
             TS_PROPAGATE => TransitionDetails {
                 transition_schema: TransitionSchema {
@@ -315,7 +292,7 @@ fn bfa_schema() -> Schema {
             },
             TS_MINT => TransitionDetails {
                 transition_schema: TransitionSchema {
-                    metadata: tiny_bset!(MS_AFTER_BLOCK),
+                    metadata: tiny_bset!(MS_BEFORE_BLOCK),
                     globals: tiny_bmap! {
                         GS_ISSUED_SUPPLY => Occurrences::Once,
                     },
@@ -341,9 +318,7 @@ fn bfa_schema() -> Schema {
                         OS_MINT => Occurrences::NoneOrMore,
                         OS_LINK => Occurrences::NoneOrOnce,
                     },
-                    assignments: tiny_bmap! {
-                        OS_ASSET => Occurrences::NoneOrMore,
-                    },
+                    assignments: none!(),
                     validator: Some(LibSite::with(0, bfa_lib_burn().id()))
                 },
                 name: fname!("burn"),
