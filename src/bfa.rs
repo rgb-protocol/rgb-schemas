@@ -32,8 +32,15 @@
 //!
 //! A mint transition is only valid once its `Claim::Lock` has been confirmed by the bridge at the
 //! genesis `bridgeLocation`. The schema script only pushes the claim; confirmation is up to the
-//! caller's `ResolveClaim` implementation, which must verify that the bridge holds a lock for the
-//! claim's `opid`, of exactly the claim's `amount`, recorded before block `before_block`.
+//! caller's `ResolveClaim` implementation, which must verify that the bridge holds a lock under the
+//! claim's `LockId`, committing to both the mint's `opid` and its witness transaction, of exactly
+//! the claim's `amount`, recorded before block `before_block`. How deep in the bridge's chain the
+//! lock must be is left to the resolver.
+//!
+//! Burns push no claim, and their `burnReason` is optional: a burn may simply take supply out of
+//! circulation. When a burn is meant to release funds on the bridge's chain, linking the two is up
+//! to the bridge operator, e.g. by requiring a specific `burnReason` and releasing only once it has
+//! seen the burn transition.
 //!
 //! (!) Not safe to use in a production environment!
 
