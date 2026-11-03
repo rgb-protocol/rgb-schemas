@@ -21,7 +21,7 @@
 //! Similar to IFA but with two key differences:
 //! - The mint right is similar to IFA's inflation rights, but it has no amount limit
 //! - In the "mint" transition, the `issuedSupply` global state and the `beforeBlock` metadata are
-//!   pushed to the context's external anchors list to be checked before validation is finalized
+//!   pushed to the context's claims, to be confirmed before validation is finalized
 //! - The "mint" transition consumes its mint right, the "propagate" transition allows to multiply
 //!   and distribute allocations of the mint right
 //!
@@ -29,6 +29,11 @@
 //! [`UnicodeTicker`], so it is not restricted to ASCII alphanumerics like [`Ticker`].
 //!
 //! [`Ticker`]: rgbstd::stl::Ticker
+//!
+//! A mint transition is only valid once its `Claim::Lock` has been confirmed by the bridge at the
+//! genesis `bridgeLocation`. The schema script only pushes the claim; confirmation is up to the
+//! caller's `ResolveClaim` implementation, which must verify that the bridge holds a lock for the
+//! claim's `opid`, of exactly the claim's `amount`, recorded before block `before_block`.
 //!
 //! (!) Not safe to use in a production environment!
 
@@ -94,7 +99,7 @@ pub(crate) fn bfa_lib_mint() -> Lib {
         ldm     MS_BEFORE_BLOCK,s16[1]; // load beforeBlock metadata into s16[1]
         extr    s16[1],a64[1],a16[0]; // extract u64 into a64[1]
         test;
-        pma     a64[0],a64[1]; // record external anchor: amount in a64[0], beforeBlock in a64[1]
+        plc     a64[0],a64[1]; // push lock claim: amount in a64[0], beforeBlock in a64[1]
         test;
         ret;
     };

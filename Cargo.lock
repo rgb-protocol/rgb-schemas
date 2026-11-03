@@ -850,7 +850,7 @@ dependencies = [
 [[package]]
 name = "rgb-consensus"
 version = "0.11.2-rc.1"
-source = "git+https://github.com/rgb-protocol/rgb-consensus?rev=6a95a911#6a95a911b0f0e2c7175af9b5124efdbcbe7fc2a1"
+source = "git+https://github.com/rgb-protocol/rgb-consensus?rev=a5f0704e#a5f0704e711bcd4f02036715c3eac3777afe7b93"
 dependencies = [
  "amplify",
  "baid64",
@@ -876,7 +876,7 @@ dependencies = [
 [[package]]
 name = "rgb-invoicing"
 version = "0.11.2-rc.1"
-source = "git+https://github.com/rgb-protocol/rgb-ops?rev=6c02dc72#6c02dc72eaf552bb69c3f5e37dcfeab80434fce9"
+source = "git+https://github.com/rgb-protocol/rgb-ops?rev=e93c47f2#e93c47f2dc4445e352a03bda32f1778c92c66bea"
 dependencies = [
  "amplify",
  "baid64",
@@ -893,7 +893,7 @@ dependencies = [
 [[package]]
 name = "rgb-ops"
 version = "0.11.2-rc.1"
-source = "git+https://github.com/rgb-protocol/rgb-ops?rev=6c02dc72#6c02dc72eaf552bb69c3f5e37dcfeab80434fce9"
+source = "git+https://github.com/rgb-protocol/rgb-ops?rev=e93c47f2#e93c47f2dc4445e352a03bda32f1778c92c66bea"
 dependencies = [
  "amplify",
  "baid64",

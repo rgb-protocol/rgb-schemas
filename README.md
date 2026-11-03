@@ -42,7 +42,7 @@ This repository provides the following RGB schemas:
 
 * __Bridged fungible assets (BFA)__.
   **Not production-ready**
-  This is a fungible asset that is bridged from a different chain through external anchors.
+  This is a fungible asset that is bridged from a different chain through lock claims.
   It supports *mint*, *burn*, *link* and *propagate* transitions.
 
 ## License

@@ -26,7 +26,7 @@ fn main() {
 
     let reject_list = RejectListLocation::Url(RejectListUrl::from("example.xyz/reject"));
 
-    // Address of the token contract on the bridged (external) chain.
+    // Address of the bridge contract on the EVM chain.
     let bridge_location = BridgeLocation::Evm(EvmContract {
         chain_id: 1,
         address: EvmAddress::from_str("0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef")
