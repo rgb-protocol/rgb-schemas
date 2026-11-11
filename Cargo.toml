@@ -20,12 +20,12 @@ name = "schemata"
 
 [dependencies]
 amplify = "=4.8.1"
-rgb-strict-types = "~1.0.5"
-rgb-aluvm = "0.11.2-rc.1"
-rgb-ops = { version = "0.11.2-rc.1", features = ["fs"] }
+rgb-strict-types = "~1.0.6"
+rgb-aluvm = "0.11.2-rc.2"
+rgb-ops = { version = "0.11.2-rc.2", features = ["fs"] }
 
 [dev-dependencies]
-rgb-ops = { version = "0.11.2-rc.1", features = [
+rgb-ops = { version = "0.11.2-rc.2", features = [
     "fs",
     "serde",
     "sqlite",
@@ -44,9 +44,3 @@ log = [
 fs = [
     "rgb-ops/fs",
 ]
-
-[patch.crates-io]
-rgb-strict-encoding = { git = "https://github.com/rgb-protocol/rgb-strict-encoding", rev = "e12b9944" }
-rgb-strict-types = { git = "https://github.com/rgb-protocol/rgb-strict-types", rev = "8714cdc" }
-rgb-consensus = { git = "https://github.com/rgb-protocol/rgb-consensus", rev = "7e416ce9" }
-rgb-ops = { git = "https://github.com/rgb-protocol/rgb-ops", rev = "e93c47f2" }
